@@ -4,9 +4,7 @@ Futures.
 The instance of the class represents the database record. It can be used
 in to reading and write data, modify fields and so on.
 
-Important: the code has to run within a Fiber for Futures to work. This can be
-archived either manually or by using Fiber-powered framework (like Meteor). The
-class has been designed to use with Meteor.
+Important: the code has to run within an async function.
 
 #	Usage
 
@@ -23,31 +21,31 @@ class MyObject extends DbRecord {
 // Create record
 const obj = new MyObject();
 try {
-	obj.init();
+	await await obj.init();
 } catch(ex) {
 	console.error("Object initialization error:", ex);
 	return;
 }
 
-obj->some_field("value");
-obj->commit();
+obj.some_field("value");
+await obj.commit();
 
 // Use record
 const obj = new MyObject({ id: 1 });
-obj.init();
-console.log(obj->some_field());
+await obj.init();
+console.log(obj.some_field());
 
 // Process records in a transaction
 dbh.execTransaction((trxDbh) => {
 	const obj1 = new ObjectOne();
-	obj1.init();
+	await obj1.init();
 	obj1.name("my name");
-	obj1.commit();
+	await obj1.commit();
 	
 	const obj2 = new ObjectTwo();
-	obj2.init();
-	obj2.parent(obj1->id());
-	obj2.commit();
+	await obj2.init();
+	obj2.parent(obj1.id());
+	await obj2.commit();
 });
 ```
 
@@ -73,7 +71,7 @@ var obj = new InheritedClass({ uniqueFieldName: 11111 });
 ```
  
 After reading the record, the class will create the required get/set functions to access
-database row fields (e.g. let v = obj->some_field())
+database row fields (e.g. let v = obj.some_field())
 
 ### Records by secondary keys
 
@@ -124,11 +122,11 @@ fields has to be ended by calling commit():
 
 ```javascript
 let obj = new InheritedClass();
-obj.init();
+await obj.init();
 obj.some_field1("new value 1");
 obj.some_field2("new value 2");
 ...
-obj.commit();
+await obj.commit();
 ```
 
 Until commit() is called, the value of locate-field of the new record is
@@ -137,8 +135,8 @@ record ID from mysql and sets it accordingly:
 
 ```javascript
 ...
-obj.commit();
-console.log("New object ID", obj->id());
+await obj.commit();
+console.log("New object ID", obj.id());
 ```
 
 ## Removing records
@@ -147,7 +145,7 @@ The record can be removed by calling deleteRecord():
 
 ```javascript
 let obj = new SomeObject();
-obj.init();
+await obj.init();
 obj.deleteRecord();
 ```
 
@@ -189,7 +187,7 @@ obj.autocommit(false);
 obj.some_field1("new value 1");
 obj.some_field2("new value 2");
 ...
-obj.commit();
+await obj.commit();
 ```
 
 For new records, the autocommit is disabled by default (see above).
@@ -224,7 +222,7 @@ To fetch records from the database table the static forEach() function
 is being used:
 
 ```javascript
-const cnt = SomeObject.forEach({options}, function(itm, options) {
+const cnt = await SomeObject.forEach({options}, async function(itm, options) {
 	...
 });
 ```
@@ -248,7 +246,7 @@ lower-case letters) are
 being considered as query fields to use in WHERE part of the query:
 
 ```javascript
-SomeObject.forEach({ name: "Some name" });
+await SomeObject.forEach({ name: "Some name" });
 // turns to SELECT * FROM objects WHERE name="Some name"
 ```
 
@@ -285,16 +283,16 @@ is to be done). To process operations within the SQL transaction, wrap
 the code to execTransaction:
 
 ```js
-dbh.execTransaction((trxDbh) => {
+await dbh.execTransaction(async (trxDbh) => {
 	const obj1 = new ObjectOne();
-	obj1.init();
+	await obj1.init();
 	obj1.name("my name");
-	obj1.commit();
+	await obj1.commit();
 	
 	const obj2 = new ObjectTwo();
-	obj2.init();
-	obj2.parent(obj1->id());
-	obj2.commit();
+	await obj2.init();
+	obj2.parent(obj1.id());
+	await obj2.commit();
 });
 ```
 
@@ -322,10 +320,10 @@ This code **MAY NOT** work as expected:
 
 ```js
 const obj = new ObjectOne(); // obj uses dbh_1 connection
-obj.init();
+await obj.init();
 obj.name("original name")
 
-dbh.execTransaction((dbh_2) => {
+await dbh.execTransaction(async (dbh_2) => {
 	// dbh_2 is transacted
 
 	obj.name("new name"); // <== This still uses dbh_1, which is not transacted
@@ -346,7 +344,7 @@ The database handle for the transaction can be obtained from any
 DbRecord object by calling static method masterDbh():
 
 ```js
-MyObject.masterDbh().execTransaction(() => {
+await MyObject.masterDbh().execTransaction(async () => {
 	...;
 });
 ```
