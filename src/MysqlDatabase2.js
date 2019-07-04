@@ -140,15 +140,13 @@ class MysqlDatabase2 {
 	/**
 	 * Begins the database transaction.
 	 *
-	 * options:
-	 * 	reuseConnection - use the same connection (debug)
-	 *
-	 * @param {Function} cb - the callback to call. Should return 'false' if
-	 * 	transaction should be rolled back
+	 * @typedef {Object} ExecTransactionOptions
 	 */
 	async execTransaction(cb) {
 		// TODO GG: port the nested trasactions code here
 		let trxDb = null;
+
+		// Set _config.reuseConnection=true to debug transaction run on the same connection
 
 		if(this._transacted > 0 || this._config.reuseConnection) {
 			// In a nested transaction, don't create a new connection
