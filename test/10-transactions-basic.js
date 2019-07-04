@@ -78,6 +78,7 @@ describe('DbRecord transactions', function() {
 		await TestRecord.createMockTable(dbh);
 
 		let objId = null;
+		dbh._config.logger = mlog;
 		await dbh.execTransaction(async (dbh) => {
 			const obj = new TestRecord();
 			await obj.init();

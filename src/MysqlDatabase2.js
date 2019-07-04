@@ -69,7 +69,7 @@ class MysqlDatabase2 {
 					// console.log("connection taken from pool");
 					this._createdFromPool = true;
 					this._db = dbh;
-					this.cid = 10 + Math.random();
+					this.cid = parseInt(Math.random() * 1000000) + "p";
 
 					// SQL logging
 					if(this._config.debugSQL) {
@@ -89,7 +89,7 @@ class MysqlDatabase2 {
 					}
 				});
 			} else {
-				this.cid = Math.random();
+				this.cid = parseInt(Math.random() * 1000000) + "s";
 
 				this._db.connect((res) => {
 					resolve(res);
@@ -147,7 +147,6 @@ class MysqlDatabase2 {
 		let trxDb = null;
 
 		// Set _config.reuseConnection=true to debug transaction run on the same connection
-
 		if(this._transacted > 0 || this._config.reuseConnection) {
 			// In a nested transaction, don't create a new connection
 			trxDb = this;
@@ -164,8 +163,8 @@ class MysqlDatabase2 {
 		// Only execute START TRANSACTION for the first-level trx
 		if(trxDb._transacted++ === 0) {
 			await trxDb.queryAsync("START TRANSACTION  /* from trx */");
+			this._debug("START TRANSACTION in dbh", this.cid);
 		}
-
 		const trxPromise = new Promise((resolve, reject) => {
 			// Execute transaction and create a running context for it
 			trxContext.run(async() => {
@@ -176,14 +175,14 @@ class MysqlDatabase2 {
 					res = await cb(trxDb);
 					this._debug("got cb reply:", res);
 				} catch(ex) {
-					this._debug("Internal transactione exception:", ex);
+					this._debug("Internal transaction exception:", ex);
 					await trxDb.rollback();
-					throw ex;
+					reject(ex);
 				}
 
 				if(res === false) {
 					await trxDb.rollback();
-					this._debug("did the rollback");
+					this._debug("did the rollback, dbh", this.cid);
 				} else {
 					await trxDb.commit();
 					this._debug("did the commit");
@@ -291,6 +290,14 @@ class MysqlDatabase2 {
 				resolve(masterDbh);
 			}
 		});
+	}
+
+	/**
+	 * The connection factory fast entry, without need to create an object
+	 * @returns {*}
+	 */
+	static masterDbhRO() {
+		return trxContext.get("dbh");
 	}
 
 

@@ -91,7 +91,6 @@ describe('DbRecord transactions pool', function() {
 		assert.ok(await TestRecord.tryCreate({ id: objId }) === null, "Object should not exist");
 	});
 
-
 	//
 	//
 	it('should not intersect', async function() {
@@ -133,6 +132,27 @@ describe('DbRecord transactions pool', function() {
 
 		// Checks
 		assert.equal(rowsFound, 1, "No trx overlap found");
+	});
+
+	//
+	//
+	it('should throw when object updated inside wrong transaction', async function() {
+		let objId = null;
+
+		const obj = new TestRecord();
+		await obj.init();
+		obj.name(this.test.fullTitle());
+		await obj.commit();
+
+		// The trx which will thrown an exception
+		const p = dbh.execTransaction(async (dbh) => {
+			obj.name("Something else");
+			await obj.commit();
+		});
+
+		await assert.rejects(p, {
+			message: 'TestRecord: Object has to be re-created in transaction',
+		});
 	});
 });
 
