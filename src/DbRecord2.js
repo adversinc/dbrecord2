@@ -336,7 +336,8 @@ export default class DbRecord2 {
 				const obj = new this(o);
 				await obj.init();
 
-				cb(obj, options);
+				// Wait for iterator to end
+				await cb(obj, options);
 			}
 		} else {
 			options.COUNTER = options.TOTAL;
