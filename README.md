@@ -117,9 +117,6 @@ returns either a new object created or null.
 To create the new record, the constructor is being called without the
 locate-field argument: let obj = new InheritedClass();
 
-The newly created object has auto-commit disabled (see below), so setting the necessary
-fields has to be ended by calling commit():
-
 ```javascript
 let obj = new InheritedClass();
 await obj.init();
@@ -178,19 +175,15 @@ obj.name(v + 1);
 
 ### Committing changes to the database
 
-By default, all changes sent to the access methods are immediately automatically
-committed to the database. However, the commit can be delayed by setting the
-manual commit mode:
+All changes sent to the access methods are delayed until the commit() is
+called:
 
 ```javascript
-obj.autocommit(false);
 obj.some_field1("new value 1");
 obj.some_field2("new value 2");
 ...
 await obj.commit();
 ```
-
-For new records, the autocommit is disabled by default (see above).
 
 ### Overriding access methods
 

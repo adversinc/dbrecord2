@@ -19,7 +19,6 @@ export default class DbRecord2 {
 		/**
 		 * The database handler to work with
 		 */
-		this._autocommit = true;
 		this._raw = {};
 		this._changes = {};
 		this._super = {}; // To hold the existing access method functions
@@ -65,19 +64,6 @@ export default class DbRecord2 {
 	}
 
 	/**
-	 * Instructs class to either save changes to db after each field update, or
-	 * accumulate the changes.
-	 * @param {boolean} auto
-	 */
-	autocommit(auto) {
-		if(auto && !this._autocommit) {
-			// If there are potential unsaved changes, save them
-			this.commit();
-		}
-		this._autocommit = auto;
-	}
-
-	/**
 	 * Save accumulated changed fields, if any
 	 */
 	async commit() {
@@ -106,6 +92,9 @@ export default class DbRecord2 {
 
 		// Compare our dbh.cid and current transaction dbh
 		const trxDbh = MysqlDatabase2.masterDbhRO();
+
+		//console.log("Comparing dbh:", this._dbh.cid, trxDbh? trxDbh.cid: undefined);
+
 		if(trxDbh) {
 			if(this._dbh.cid !== trxDbh.cid) {
 				throw new Error(`${this.constructor.name}: Object has to be re-created in transaction`);
@@ -167,7 +156,6 @@ export default class DbRecord2 {
 		else {
 			// else create a new record: read the table info and build access methods
 			await this._initEmpty();
-			this.autocommit(false);
 		}
 	}
 
@@ -240,10 +228,6 @@ export default class DbRecord2 {
 		if(value !== undefined) {
 			this._changes[field] = true;
 			this._raw[field] = value;
-
-			if(this._autocommit) {
-				this.commit();
-			}
 		}
 
 		return this._raw[field];

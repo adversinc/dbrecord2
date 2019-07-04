@@ -1,6 +1,6 @@
 import lodashMerge from 'lodash/merge';
 import mysql from 'mysql';
-import ContextStorage from 'continuation-local-storage';
+import ContextStorage from 'cls-hooked';
 
 /**
  * The MySQL connection wrapper which provides the following features:
@@ -157,13 +157,13 @@ class MysqlDatabase2 {
 			trxDb._transacted = this._transacted;
 
 			await trxDb.connect();
-			this._debug("created dbh", trxDb.cid);
+			this._debug("created transaction dbh", trxDb.cid);
 		}
 
 		// Only execute START TRANSACTION for the first-level trx
 		if(trxDb._transacted++ === 0) {
 			await trxDb.queryAsync("START TRANSACTION  /* from trx */");
-			this._debug("START TRANSACTION in dbh", this.cid);
+			this._debug("START TRANSACTION in dbh", trxDb.cid);
 		}
 		const trxPromise = new Promise((resolve, reject) => {
 			// Execute transaction and create a running context for it

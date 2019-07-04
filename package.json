@@ -1,6 +1,6 @@
 {
   "name": "advers-dbrecord2",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "The MySQL active record base class, async-based",
   "main": "lib/DbRecord2.js",
   "scripts": {
@@ -36,10 +36,12 @@
     "config": "^1.31.0",
     "mocha": "^6.1.4",
     "mocha-logger": "^1.0.6",
+    "nyc": "^14.1.1",
     "promise-mysql": "^3.3.2",
     "source-map-support": "^0.5.12"
   },
   "dependencies": {
+    "cls-hooked": "^4.2.2",
     "continuation-local-storage": "^3.2.1",
     "lodash": "^4.17.11",
     "mysql": "^2.17.1",

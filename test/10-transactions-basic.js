@@ -25,6 +25,7 @@ describe('DbRecord transactions', function() {
 	before(async function() {
 		const c = lodashMerge({}, config.get("mysql"));
 		c.reuseConnection = true;
+		c.logger = mlog;
 
 		MysqlDatabase.masterConfig(c);
 		dbh = await MysqlDatabase.masterDbh();
