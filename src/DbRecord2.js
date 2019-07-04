@@ -286,6 +286,8 @@ export default class DbRecord2 {
 	 * @param options
 	 * @param {Function} cb - the callback function, it receives two arguments:
 	 * 	the current iteration DbRecord and the "options" object
+	 *
+	 * @returns {Number} the number of rows found
 	 */
 	static async forEach(options, cb) {
 		let sql = `SELECT ${this._locatefield()} FROM ${this._table()}`;
