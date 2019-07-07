@@ -115,6 +115,9 @@ class MysqlDatabase2 {
 	queryAsync(query, values) {
 		return new Promise((resolve, reject) => {
 			this.query(query, values, (err, res) => {
+				if(err) {
+					return reject(err);
+				}
 				// console.log("before resolve of", query, res);
 				resolve(res);
 			});
