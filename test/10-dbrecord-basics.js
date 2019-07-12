@@ -61,6 +61,19 @@ describe('DbRecord basic ops', function() {
 
 	//
 	//
+	it('should fail on undefined primary key', async function() {
+		let error = {};
+
+		await assert.rejects(async() => {
+			let obj = new TestRecord({id: undefined});
+			await obj.init();
+		}, {
+			message: "E_DB_NO_OBJECT"
+		});
+	});
+
+	//
+	//
 	it('should get created on existing row', async function() {
 		await dbh.queryAsync(`INSERT INTO dbrecord_test SET id=10,name=?`, [this.test.fullTitle()]);
 
@@ -104,6 +117,18 @@ describe('DbRecord basic ops', function() {
 		assert.equal(error.message, "E_DB_NO_OBJECT");
 	});
 
+	//
+	//
+	it('should fail on undefined secondary key', async function() {
+		let error = {};
+
+		await assert.rejects(async() => {
+			let obj = new TestRecord({field2: undefined});
+			await obj.init();
+		}, {
+			message: "E_DB_NO_OBJECT"
+		});
+	});
 	//
 	//
 	it('should get created by complex secondary key', async function() {
@@ -185,6 +210,19 @@ describe('DbRecord basic ops', function() {
 
 		let obj2 = await TestRecord.tryCreate({ id: 3 });
 		assert.ok(obj2 === null);
+	});
+
+	//
+	//
+	it('should accept commit with no changes', async function() {
+		await dbh.queryAsync(`INSERT INTO dbrecord_test SET id=3,name=?`, [this.test.fullTitle()]);
+
+		let obj = await TestRecord.tryCreate({ id: 3 });
+		assert.ok(obj !== null);
+
+		await assert.doesNotReject( async () => {
+			await obj.commit();
+		});
 	});
 });
 

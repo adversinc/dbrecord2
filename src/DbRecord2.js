@@ -69,6 +69,10 @@ export default class DbRecord2 {
 	async commit() {
 		let sql = "";
 
+		if(Object.keys(this._changes).length === 0) {
+			return;
+		}
+
 		if(this._raw[this._locateField] !== undefined) {
 			sql = "UPDATE ";
 		} else {
@@ -147,7 +151,7 @@ export default class DbRecord2 {
 		});
 
 		// if "_locateField" is set, then we need to read our data from the database
-		if(options[this._locateField] !== undefined) {
+		if(this._locateField in options) {
 			await this._read(options[this._locateField]);
 		}
 		else if(byKey) {
