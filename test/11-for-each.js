@@ -219,5 +219,68 @@ describe('DbRecord record iteration', function() {
 		assert.equal(doubleInside, false, "forEach waits for iterator to end");
 	});
 
+
+	it('should accept additional where conditions', async function() {
+		// Create records
+		for(let i = 0; i < 10; i++) {
+			const obj = new TestRecord();
+			await obj.init();
+
+			obj.name(this.test.fullTitle() + "#" + i);
+			obj.field2(parseInt(i/3));
+			await obj.commit();
+		}
+
+		const n = await TestRecord.forEach({
+			whereCond: [
+				"field2=2"
+			]
+		}, async (itm, options) => {
+			assert.equal(itm.field2(), 2);
+		});
+
+		assert.equal(n, 3);
+	});
+
+	it('should accept additional where conditions 2', async function() {
+		// Create records
+		for(let i = 0; i < 10; i++) {
+			const obj = new TestRecord();
+			await obj.init();
+
+			obj.name(this.test.fullTitle() + "#" + i);
+			obj.field2(parseInt(i/3));
+			await obj.commit();
+		}
+
+		const n = await TestRecord.forEach({
+			whereCond: [
+				"field2=5"
+			]
+		});
+
+		assert.equal(n, 0);
+	});
+
+	it('should not clash on complex additional conditions', async function() {
+		// Create records
+		for(let i = 0; i < 10; i++) {
+			const obj = new TestRecord();
+			await obj.init();
+
+			obj.name(this.test.fullTitle() + "#" + i);
+			obj.field2(parseInt(i/3));
+			await obj.commit();
+		}
+
+		const n = await TestRecord.forEach({
+			whereCond: [
+				"field2=1",
+				"field2=2 OR field2=3"
+			]
+		});
+
+		assert.equal(n, 0);
+	});
 });
 

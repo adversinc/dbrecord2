@@ -252,6 +252,8 @@ have a capital case letter and distinguish them from field names).
 
 The following options can be used:
 
+* wheneCond - the array of string raw conditions which 
+will be added to the query 
 * WHERE - appended to the query's WHERE as is
 * LIMIT - used as a query's LIMIT
 * ORDERBY - used as a query's ORDER BY

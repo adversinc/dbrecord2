@@ -275,11 +275,15 @@ export default class DbRecord2 {
 		return MysqlDatabase2.masterDbh();
 	}
 
+
+
 	/**
 	 * Runs through database objects according the options, and calls the
 	 * callback routine for each.
 	 *
-	 * @param options
+	 * @param {Object} options
+	 * @param {String} options.any_lowercase_field - the field to get added to WHERE
+	 * @param {[String]} options.whereCond - arbitrary WHERE conditions to add
 	 * @param {Function} cb - the callback function, it receives two arguments:
 	 * 	the current iteration DbRecord and the "options" object
 	 *
@@ -297,6 +301,12 @@ export default class DbRecord2 {
 			where.push(`${k}=?`);
 			qparam.push(options[k]);
 		});
+
+		if(options.whereCond) {
+			options.whereCond.forEach((q) => {
+				where.push(`(${q})`);
+			});
+		}
 
 		if(where.length > 0) {
 			sql += " WHERE " + where.join(" AND ");
