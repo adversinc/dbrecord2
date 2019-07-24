@@ -8,7 +8,7 @@ const MysqlDatabase = require("../lib/MysqlDatabase2");
 const TestRecord = require('./classes/TestRecord');
 
 // Tests
-describe('DbRecord basic ops', function() {
+describe('DbRecord2 basic ops', function() {
 	let dbh = null;
 	before(async function() {
 		MysqlDatabase.masterConfig(config.get("mysql"));

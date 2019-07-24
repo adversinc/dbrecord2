@@ -17,7 +17,7 @@ const sleep = function(ms) {
 };
 
 // Tests
-describe('DbRecord record iteration', function() {
+describe('DbRecord2 record iteration', function() {
 	let dbh = null;
 	before(async function() {
 		MysqlDatabase.masterConfig(config.get("mysql"));
@@ -53,11 +53,11 @@ describe('DbRecord record iteration', function() {
 		});
 
 		assert.deepEqual(res, [
-			{ id: 1, name: "DbRecord record iteration should go through all rows#0" },
-			{ id: 2, name: "DbRecord record iteration should go through all rows#1" },
-			{ id: 3, name: "DbRecord record iteration should go through all rows#2" },
-			{ id: 4, name: "DbRecord record iteration should go through all rows#3" },
-			{ id: 5, name: "DbRecord record iteration should go through all rows#4" },
+			{ id: 1, name: "DbRecord2 record iteration should go through all rows#0" },
+			{ id: 2, name: "DbRecord2 record iteration should go through all rows#1" },
+			{ id: 3, name: "DbRecord2 record iteration should go through all rows#2" },
+			{ id: 4, name: "DbRecord2 record iteration should go through all rows#3" },
+			{ id: 5, name: "DbRecord2 record iteration should go through all rows#4" },
 		]);
 	});
 
@@ -81,11 +81,11 @@ describe('DbRecord record iteration', function() {
 		});
 
 		assert.deepEqual(res, [
-			{ id: 5, name: "DbRecord record iteration should use ORDERBY#4" },
-			{ id: 4, name: "DbRecord record iteration should use ORDERBY#3" },
-			{ id: 3, name: "DbRecord record iteration should use ORDERBY#2" },
-			{ id: 2, name: "DbRecord record iteration should use ORDERBY#1" },
-			{ id: 1, name: "DbRecord record iteration should use ORDERBY#0" },
+			{ id: 5, name: "DbRecord2 record iteration should use ORDERBY#4" },
+			{ id: 4, name: "DbRecord2 record iteration should use ORDERBY#3" },
+			{ id: 3, name: "DbRecord2 record iteration should use ORDERBY#2" },
+			{ id: 2, name: "DbRecord2 record iteration should use ORDERBY#1" },
+			{ id: 1, name: "DbRecord2 record iteration should use ORDERBY#0" },
 		]);
 	});
 
@@ -109,7 +109,7 @@ describe('DbRecord record iteration', function() {
 		});
 
 		assert.deepEqual(res, [
-			{ id: 1, name: "DbRecord record iteration should use limits#0" },
+			{ id: 1, name: "DbRecord2 record iteration should use limits#0" },
 		]);
 	});
 
@@ -133,7 +133,7 @@ describe('DbRecord record iteration', function() {
 		});
 
 		assert.deepEqual(res, [
-			{ id: 3, name: "DbRecord record iteration should use complex limits#2" },
+			{ id: 3, name: "DbRecord2 record iteration should use complex limits#2" },
 		]);
 	});
 
@@ -158,7 +158,7 @@ describe('DbRecord record iteration', function() {
 		});
 
 		assert.deepEqual(res, [
-			{ id: 3, name: "DbRecord record iteration should go through with field filter#2", field2: 2 },
+			{ id: 3, name: "DbRecord2 record iteration should go through with field filter#2", field2: 2 },
 		]);
 	});
 
