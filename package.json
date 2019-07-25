@@ -1,13 +1,15 @@
 {
   "name": "advers-dbrecord2",
-  "version": "2.2.0",
+  "version": "2.4.0",
   "description": "The MySQL active record base class, async-based",
   "main": "lib/DbRecord2.js",
   "scripts": {
     "build": "babel -d lib/ src/",
     "prepare": "npm run build",
-    "test": "npm run build && mocha",
-    "publish": "npm publish --registry https://registry.npmjs.org/"
+    "test": "npm run build && mocha"
+  },
+  "publishConfig": {
+    "registry": "https://npm.metabizlist.com"
   },
   "repository": {
     "type": "git",
