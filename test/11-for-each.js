@@ -254,9 +254,8 @@ describe('DbRecord2 record iteration', function() {
 		}
 
 		const n = await TestRecord.forEach({
-			whereCond: [
-				"field2=5"
-			]
+			whereCond: [ "field2=?" ],
+			whereParam: [ 5 ]
 		});
 
 		assert.equal(n, 0);

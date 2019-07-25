@@ -283,7 +283,8 @@ export default class DbRecord2 {
 	 *
 	 * @param {Object} options
 	 * @param {String} options.any_lowercase_field - the field to get added to WHERE
-	 * @param {[String]} options.whereCond - arbitrary WHERE conditions to add
+	 * @param {[String]} options.whereCond - optional WHERE conditions to add
+	 * @param {[String]} options.whereParam - optional parameters for whereCond's
 	 * @param {Function} cb - the callback function, it receives two arguments:
 	 * 	the current iteration DbRecord and the "options" object
 	 *
@@ -308,6 +309,12 @@ export default class DbRecord2 {
 			});
 		}
 
+		if(options.whereParam) {
+			options.whereParam.forEach((q) => {
+				qparam.push(q);
+			});
+		}
+
 		if(where.length > 0) {
 			sql += " WHERE " + where.join(" AND ");
 		}
@@ -324,7 +331,7 @@ export default class DbRecord2 {
 		}
 
 		if(options.DEBUG_SQL_QUERY) {
-			console.log(sql);
+			console.log(sql, qparam);
 		}
 
 		//
