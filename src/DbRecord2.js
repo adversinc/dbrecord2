@@ -65,8 +65,10 @@ export default class DbRecord2 {
 
 	/**
 	 * Save accumulated changed fields, if any
+	 * @param {Object} options
+	 * @param {String} options.behavior - if "REPLACE", does "REPLACE INTO"
 	 */
-	async commit() {
+	async commit(options = {}) {
 		let sql = "";
 
 		if(Object.keys(this._changes).length === 0) {
@@ -75,6 +77,8 @@ export default class DbRecord2 {
 
 		if(this._raw[this._locateField] !== undefined) {
 			sql = "UPDATE ";
+		} else if(options.behavior === "REPLACE") {
+			sql = "REPLACE INTO ";
 		} else {
 			sql = "INSERT INTO ";
 		}
@@ -197,7 +201,10 @@ export default class DbRecord2 {
 
 
 	/**
-	 * Initialize object and methods from rows array
+	 * Initialize object and methods			if(args.Length >= 1 && !UUID.TryParse(args[0], out folder)) {
+				return "FAIL: error parsing folder UUID";
+			}
+	 from rows array
 	 * @param rows
 	 * @private
 	 */
