@@ -139,7 +139,7 @@ describe('DbRecord transactions', function() {
 
 
 // Tests
-describe('DbRecord transactionWithMe', function() {
+describe('DbRecord2 transactionWithMe', function() {
 	let dbh = null;
 	before(async function() {
 		const c = lodashMerge({}, config.get("mysql"));
