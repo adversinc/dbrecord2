@@ -137,3 +137,68 @@ describe('DbRecord transactions', function() {
 	});
 });
 
+
+// Tests
+describe('DbRecord transactionWithMe', function() {
+	let dbh = null;
+	before(async function() {
+		const c = lodashMerge({}, config.get("mysql"));
+		c.reuseConnection = true;
+		c.logger = mlog;
+
+		MysqlDatabase.masterConfig(c);
+		dbh = await MysqlDatabase.masterDbh();
+	});
+
+	beforeEach(async function() {
+		await TestRecord.createMockTable(dbh);
+	});
+
+	after(() => {
+		MysqlDatabase.masterDbhDestroy();
+	});
+
+	//
+	//
+	it('should work inside trx', async function() {
+		const obj = new TestRecord();
+		await obj.init();
+		obj.name(this.test.fullTitle());
+		await obj.commit();
+
+		let originalName = "was not called at all";
+
+		await obj.transactionWithMe(async(obj) => {
+			console.log("In TRX:", obj.name());
+			originalName = obj.name();
+
+			obj.name("Changed to new");
+			await obj.commit();
+		});
+
+		assert.equal(originalName, this.test.fullTitle());
+		assert.equal(obj.name(), "Changed to new");
+	});
+
+	it('should rollback trx if required', async function() {
+		const obj = new TestRecord();
+		await obj.init();
+		obj.name(this.test.fullTitle());
+		await obj.commit();
+
+		let originalName = "was not called at all";
+
+		await obj.transactionWithMe(async(obj) => {
+			console.log("In TRX:", obj.name());
+			originalName = obj.name();
+
+			obj.name("Changed to new");
+			await obj.commit();
+
+			return false;
+		});
+
+		assert.equal(originalName, this.test.fullTitle());
+		assert.equal(obj.name(), this.test.fullTitle());
+	});
+});
