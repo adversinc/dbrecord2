@@ -7,6 +7,57 @@ const
 const MysqlDatabase = require("../lib/MysqlDatabase2");
 
 // Tests
+describe('MysqlDatabase2 connection', function() {
+	after(() => {
+		MysqlDatabase.masterDbhDestroy();
+	});
+
+	//
+	//
+	it('should throw on wrong credentials', async function() {
+		MysqlDatabase.masterConfig({
+			host: "localhost",
+			user: "user never existed",
+			password: "password2password"
+		});
+
+
+		await assert.rejects(async() => {
+				await MysqlDatabase.masterDbh();
+			},
+			{
+				code: "ER_ACCESS_DENIED_ERROR"
+			});
+	});
+});
+
+describe('MysqlDatabase2 pool connection', function() {
+	after(() => {
+		MysqlDatabase.masterDbhDestroy();
+	});
+
+	//
+	//
+	it('should throw on wrong credentials', async function() {
+		const config = {
+			host: "localhost",
+			user: "user never existed",
+			password: "password2password",
+			connectionLimit: 3
+		};
+
+		await MysqlDatabase.setupPool(config);
+
+		await assert.rejects(async() => {
+				await MysqlDatabase.masterDbh();
+			},
+			{
+				code: "ER_ACCESS_DENIED_ERROR"
+			});
+	});
+});
+
+
 describe('MysqlDatabase2 basic ops', function() {
 	let dbh = null;
 	before(async function() {

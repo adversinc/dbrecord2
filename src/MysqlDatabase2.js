@@ -91,8 +91,9 @@ class MysqlDatabase2 {
 			} else {
 				this.cid = parseInt(Math.random() * 1000000) + "s";
 
-				this._db.connect((res) => {
-					resolve(res);
+				this._db.connect((err) => {
+					if(err) { reject(err); }
+					resolve();
 				});
 			}
 		});
@@ -236,7 +237,7 @@ class MysqlDatabase2 {
 	destroy() {
 		// Connections created from pool are to be released, direct connections destroyed
 		if(this._createdFromPool) {
-			this._db.release();
+			if(this._db != null) { this._db.release(); }
 		} else {
 			this._db.destroy();
 		}
@@ -288,7 +289,8 @@ class MysqlDatabase2 {
 
 				masterDbh
 					.connect()
-					.then(() => { resolve(masterDbh); });
+					.then((r) => { resolve(masterDbh); })
+					.catch((err) => { reject(err); });
 			} else {
 				resolve(masterDbh);
 			}
@@ -331,6 +333,7 @@ class MysqlDatabase2 {
 		if(connectionPool) {
 			connectionPool.end((err) => {
 				// console.log("connectionPool destroyed");
+				connectionPool = null;
 			});
 		}
 	}
