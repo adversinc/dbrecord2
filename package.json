@@ -4,7 +4,8 @@
   "description": "The MySQL active record base class, async-based",
   "main": "lib/DbRecord2.js",
   "scripts": {
-    "build": "babel -d lib/ src/",
+    "build-devel": "babel -d lib/ src/  --presets=./babel/babel-preset-conditional-devel",
+    "build": "babel -d lib/ src/  --presets=./babel/babel-preset-conditional-prod",
     "prepare": "npm run build",
     "test": "npm run build && mocha",
     "publish": "yarn run build"
@@ -36,6 +37,7 @@
     "@babel/preset-env": "^7.4.5",
     "assert": "^1.5.0",
     "babel-plugin-add-module-exports": "^1.0.2",
+    "babel-plugin-conditional-compile": "^0.0.5",
     "config": "^1.31.0",
     "mocha": "^6.1.4",
     "mocha-logger": "^1.0.6",

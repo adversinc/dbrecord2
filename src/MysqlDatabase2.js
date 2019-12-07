@@ -101,6 +101,10 @@ class MysqlDatabase2 {
 
 
 	disconnect() {
+		if(TARGET == "development") {
+			console.log(`${this._db.threadId}: closing mysql threadId`);
+		}
+
 		this._db.end();
 	}
 
@@ -144,9 +148,17 @@ class MysqlDatabase2 {
 	/**
 	 * Begins the database transaction.
 	 *
-	 * @typedef {Object} ExecTransactionOptions
+	 * Used _config:
+	 * 	reuseConnection - use the same connection (debug)
+	 *
+	 * @param {Function} cb - the callback to call. Should return 'false' if
+	 * 	transaction should be rolled back
 	 */
 	async execTransaction(cb) {
+		return this.execTransactionAsync(cb);
+	}
+
+	async execTransactionAsync(cb) {
 		// TODO GG: port the nested trasactions code here
 		let trxDb = null;
 
@@ -156,8 +168,11 @@ class MysqlDatabase2 {
 			trxDb = this;
 			this._debug("reused dbh", trxDb.cid, this._transacted, this._config.reuseConnection);
 		} else {
-			// console.log("Creating transaction connection");
-			trxDb = new MysqlDatabase2(this._config);
+			if(TARGET === "development") {
+				console.log(`Old ${this._db.threadId} is creating transaction connection`);
+			}
+
+			trxDb = new this.constructor(this._config);
 			trxDb._transacted = this._transacted;
 
 			await trxDb.connect();
@@ -180,15 +195,15 @@ class MysqlDatabase2 {
 					this._debug("got cb reply:", res);
 				} catch(ex) {
 					this._debug("Internal transaction exception:", ex);
-					await trxDb.rollback();
+					await trxDb._rollback();
 					reject(ex);
 				}
 
 				if(res === false) {
-					await trxDb.rollback();
+					await trxDb._rollback();
 					this._debug("did the rollback, dbh", this.cid);
 				} else {
-					await trxDb.commit();
+					await trxDb._commit();
 					this._debug("did the commit");
 				}
 
@@ -211,7 +226,11 @@ class MysqlDatabase2 {
 	/**
 	 * Commits the current database transaction
 	 */
-	async commit() {
+	commit() {
+		return this._commit();
+	}
+
+	async _commit() {
 		if(this._transacted > 0) {
 			this._transacted--;
 
@@ -224,7 +243,11 @@ class MysqlDatabase2 {
 	/**
 	 * Rolls back the current database transaction
 	 */
-	async rollback() {
+	rollback() {
+		return this._rollback();
+	}
+
+	async _rollback() {
 		if(this._transacted > 0) {
 			this._transacted--;
 
@@ -285,7 +308,7 @@ class MysqlDatabase2 {
 			// If no global dbh exist, create it
 			if(!masterDbh) {
 				const opt = Object.assign({}, masterConfig, options);
-				masterDbh = new MysqlDatabase2(opt);
+				masterDbh = new this(opt);
 
 				masterDbh
 					.connect()

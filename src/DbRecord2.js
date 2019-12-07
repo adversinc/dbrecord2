@@ -14,6 +14,8 @@ export default class DbRecord2 {
 	 * reads the data from the database and put them into the internal structures
 	 * (see _init() and _read())
 	 * @param {Object} [options]
+	 * @param {Boolean} [options.forUpdate] - read record with FOR UPDATE flag,
+	 * 	blocking it within the transaction
 	 */
 	constructor(options = {}) {
 		/**
@@ -38,7 +40,7 @@ export default class DbRecord2 {
 		if(this._options.dbh) {
 			this._dbh = this._options.dbh;
 		} else {
-			this._dbh = await MysqlDatabase2.masterDbh();
+			this._dbh = await this._getDbhClass().masterDbh();
 		}
 
 		//console.log("using trxDbh:", this._dbh.cid);
@@ -99,7 +101,7 @@ export default class DbRecord2 {
 		}
 
 		// Compare our dbh.cid and current transaction dbh
-		const trxDbh = MysqlDatabase2.masterDbhRO();
+		const trxDbh = this._getDbhClass().masterDbhRO();
 
 		//console.log("Comparing dbh:", this._dbh.cid, trxDbh? trxDbh.cid: undefined);
 
@@ -107,6 +109,10 @@ export default class DbRecord2 {
 			if(this._dbh.cid !== trxDbh.cid) {
 				throw new Error(`${this.constructor.name}: Object has to be re-created in transaction`);
 			}
+		}
+
+		if(TARGET === "development") {
+			// console.log(`${this._dbh._db.threadId}: in commit before query`);
 		}
 
 		const res = await this._dbh.queryAsync(sql, values);
@@ -181,8 +187,9 @@ export default class DbRecord2 {
 	 */
 	async _read(locateValue, byKey) {
 		let field = byKey || this._locateField;
+		const forUpdate = this._options.forUpdate? "FOR UPDATE": "";
 
-		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${field}=? LIMIT 1`,
+		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${field}=? LIMIT 1 ${forUpdate}`,
 			[locateValue]);
 		return this._createFromRows(rows);
 	}
@@ -196,8 +203,9 @@ export default class DbRecord2 {
 	 */
 	async _readByKey(keys, values) {
 		const fields = keys.join("=? AND ") + "=?";
+		const forUpdate = this._options.forUpdate? "FOR UPDATE": "";
 
-		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${fields} LIMIT 1`,
+		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${fields} LIMIT 1 ${forUpdate}`,
 			values);
 		return this._createFromRows(rows);
 	}
@@ -282,7 +290,7 @@ export default class DbRecord2 {
 	 * @returns {MysqlDatabase2} current mysql database connection class
 	 */
 	static masterDbh() {
-		return MysqlDatabase2.masterDbh();
+		return this._getDbhClassStatic().masterDbh();
 	}
 
 
@@ -295,15 +303,65 @@ export default class DbRecord2 {
 	 * @param {String} options.any_lowercase_field - the field to get added to WHERE
 	 * @param {[String]} options.whereCond - optional WHERE conditions to add
 	 * @param {[String]} options.whereParam - optional parameters for whereCond's
+	 * @param {Boolean} [options.forUpdate] - lock records for update
+	 * @param {String} [options.ORDERBY] - the sort field or expression
+	 * @param {String} [options.LIMIT] - the SQL LIMIT expression
+	 * @param {Boolean} [options.DEBUG_SQL_QUERY] - send SQL to console log
 	 * @param {Function} cb - the callback function, it receives two arguments:
 	 * 	the current iteration DbRecord and the "options" object
 	 *
 	 * @returns {Number} the number of rows found
 	 */
 	static async forEach(options, cb) {
-		let sql = `SELECT ${this._locatefield()} FROM ${this._table()}`;
 		const where = [];
 		const qparam = [];
+		const sql = this._prepareForEach(options, where, qparam);
+
+		//
+		// Iterate
+		const _dbh = await this._getDbhClassStatic().masterDbh();
+
+		if(TARGET === "development") {
+			console.log(`${_dbh._db.threadId}: will be running forEach query`);
+		}
+
+		const rows = await _dbh.queryAsync(sql, qparam);
+		options.TOTAL = rows.length;
+
+		if(cb) {
+			options.COUNTER = 0;
+
+			for(const row of rows) {
+				options.COUNTER++;
+
+				const o = {};
+				o[this._locatefield()] = row[this._locatefield()];
+				const obj = new this(o);
+				await obj.init();
+
+				// Wait for iterator to end
+				await cb(obj, options);
+			}
+		} else {
+			options.COUNTER = options.TOTAL;
+		}
+
+		return options.COUNTER;
+	}
+
+
+	/**
+	 * Prepares SQL and param arrays for forEach()
+	 * @param options
+	 * @param where
+	 * @param qparam
+	 * @returns {string}
+	 * @private
+	 */
+	static _prepareForEach(options, where, qparam) {
+		let sql = `SELECT ${this._locatefield()} FROM ${this._table()}`;
+		if(options.forUpdate) { sql += " FOR UPDATE"; }
+
 
 		// WHERE fields
 		Object.keys(options).forEach((k) => {
@@ -344,36 +402,14 @@ export default class DbRecord2 {
 			console.log(sql, qparam);
 		}
 
-		//
-		// Iterate
-		const _dbh = await MysqlDatabase2.masterDbh();
-		const rows = await _dbh.queryAsync(sql, qparam);
-		options.TOTAL = rows.length;
-
-		if(cb) {
-			options.COUNTER = 0;
-
-			for(const row of rows) {
-				options.COUNTER++;
-
-				const o = {};
-				o[this._locatefield()] = row[this._locatefield()];
-				const obj = new this(o);
-				await obj.init();
-
-				// Wait for iterator to end
-				await cb(obj, options);
-			}
-		} else {
-			options.COUNTER = options.TOTAL;
-		}
-
-		return options.COUNTER;
+		return sql;
 	}
+
 
 	/**
 	 * Starts a transaction and creates an instance of our object within that
 	 * transaction, passing it to the callback
+	 * @param {Function} cb - function to run with a "me" newly created objec
 	 * @returns {Promise<void>}
 	 */
 	async transactionWithMe(cb) {
@@ -385,7 +421,7 @@ export default class DbRecord2 {
 		}
 
 		const dbh = await Class.masterDbh();
-		await dbh.execTransaction(async () => {
+		await dbh.execTransactionAsync(async () => {
 			const params = {};
 			params[this._locateField] = this[this._locateField]();
 			const me = new this.constructor(params);
@@ -396,6 +432,21 @@ export default class DbRecord2 {
 
 		// Re-read our object after the transaction
 		await this._read(this[this._locateField]());
+	}
+
+	/**
+	 * Returns MysqlDatabase class used for this DbRecord class
+	 * @private
+	 */
+	static _getDbhClassStatic() {
+		return MysqlDatabase2;
+	}
+	/**
+	 * Returns MysqlDatabase class used for this DbRecord object
+	 * @private
+	 */
+	_getDbhClass() {
+		return MysqlDatabase2;
 	}
 }
 
