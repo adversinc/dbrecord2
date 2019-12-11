@@ -46,6 +46,45 @@ describe('DbRecord2 basic ops', function() {
 
 	//
 	//
+	it('should create a row with newRecord', async function() {
+		const obj = await TestRecord.newRecord({
+			name: this.test.fullTitle()
+		});
+
+		// Checks
+		const TABLE_NAME  = obj._tableName;
+		const row = await dbh.queryAsync(`SELECT * FROM ${TABLE_NAME}`);
+		assert.deepEqual(row, [ {
+			id: 1,
+			name: this.test.fullTitle(),
+			field2: null,
+			field3: null,
+			managed_field: null
+		} ]);
+	});
+
+	//
+	//
+	it('should create a row with newRecord with id', async function() {
+		const obj = await TestRecord.newRecord({
+			id: 123,
+			name: this.test.fullTitle()
+		});
+
+		// Checks
+		const TABLE_NAME  = obj._tableName;
+		const row = await dbh.queryAsync(`SELECT * FROM ${TABLE_NAME}`);
+		assert.deepEqual(row, [ {
+			id: 123,
+			name: this.test.fullTitle(),
+			field2: null,
+			field3: null,
+			managed_field: null
+		} ]);
+	});
+
+	//
+	//
 	it('should fail on unexistent row', async function() {
 		let error = {};
 		try {

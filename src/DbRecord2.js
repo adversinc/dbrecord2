@@ -65,10 +65,30 @@ export default class DbRecord2 {
 		}
 	}
 
+	/** Creates a new database record, populating it from the fields list
+	 * @param {Object} fields
+	 * @param {Object} [options] - options for database creation
+	 * @returns {DbRecord} the newly created object
+	 */
+	static async newRecord(fields, options = {}) {
+		const obj = new this();
+		await obj.init();
+
+		Object.keys(fields).forEach((k) => {
+			obj._changes[k] = true;
+			obj._raw[k] = fields[k];
+		});
+
+		await obj.commit({ behavior: "INSERT" });
+		return obj;
+	}
+
 	/**
 	 * Save accumulated changed fields, if any
 	 * @param {Object} options
-	 * @param {String} options.behavior - if "REPLACE", does "REPLACE INTO"
+	 * @param {"REPLACE"|"INSERT"} options.behavior - if "REPLACE", does "REPLACE INTO".
+	 * 	"INSERT" forces to try inserting the record, regardless of _locateField
+	 * 	existance.
 	 */
 	async commit(options = {}) {
 		let sql = "";
@@ -77,7 +97,7 @@ export default class DbRecord2 {
 			return;
 		}
 
-		if(this._raw[this._locateField] !== undefined) {
+		if(this._raw[this._locateField] !== undefined && options.behavior !== "INSERT") {
 			sql = "UPDATE ";
 		} else if(options.behavior === "REPLACE") {
 			sql = "REPLACE INTO ";
@@ -95,7 +115,7 @@ export default class DbRecord2 {
 
 		sql += fields.join(",");
 
-		if(this._raw[this._locateField] !== undefined) {
+		if(this._raw[this._locateField] !== undefined && options.behavior !== "INSERT") {
 			sql += ` WHERE ${this._locateField}=?`;
 			values.push(this._raw[this._locateField]);
 		}
