@@ -1,13 +1,31 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
 const strcount = require('quickly-count-substrings');
 
+interface DbRecordOptions {
+	dbh?: MysqlDatabase2;
+	forUpdate?: boolean;
+}
+
+interface CommitOptions {
+	behavior?: "INSERT"|"REPLACE";
+}
+
 /**
  * Represents the database record class.
 **/
-export default class DbRecord2 {
-	static _table() { throw "DbRecord can't be created directly"; }
-	static _locatefield() { throw "DbRecord can't be created directly"; }
-	static _keys() { return []; }
+export = class DbRecord2 {
+	_dbh: MysqlDatabase2;
+	_raw: object;
+	_changes: object;
+	_super: object;
+	_options: DbRecordOptions;
+
+	_tableName: string;
+	_locateField: string;
+
+	static _table(): string { throw "DbRecord can't be created directly"; }
+	static _locatefield(): string { throw "DbRecord can't be created directly"; }
+	static _keys(): string[] { return []; }
 
 	/**
 	 * Creates the class instance. If options.${_locatefield()} parameter is specified,
@@ -17,7 +35,7 @@ export default class DbRecord2 {
 	 * @param {Boolean} [options.forUpdate] - read record with FOR UPDATE flag,
 	 * 	blocking it within the transaction
 	 */
-	constructor(options = {}) {
+	constructor(options: DbRecordOptions = {}) {
 		/**
 		 * The database handler to work with
 		 */
@@ -25,8 +43,8 @@ export default class DbRecord2 {
 		this._changes = {};
 		this._super = {}; // To hold the existing access method functions
 
-		this._tableName = this.constructor._table();
-		this._locateField = this.constructor._locatefield();
+		this._tableName = (this.constructor as any)._table();
+		this._locateField = (this.constructor as any)._locatefield();
 
 		this._options = Object.assign({}, options);
 	}
@@ -90,7 +108,7 @@ export default class DbRecord2 {
 	 * 	"INSERT" forces to try inserting the record, regardless of _locateField
 	 * 	existance.
 	 */
-	async commit(options = {}) {
+	async commit(options: CommitOptions = {}) {
 		let sql = "";
 
 		if(Object.keys(this._changes).length === 0) {
@@ -131,10 +149,6 @@ export default class DbRecord2 {
 			}
 		}
 
-		if(TARGET === "development") {
-			// console.log(`${this._dbh._db.threadId}: in commit before query`);
-		}
-
 		const res = await this._dbh.queryAsync(sql, values);
 
 		this._changes = {};
@@ -164,7 +178,7 @@ export default class DbRecord2 {
 		let byKey = null;
 		const keyArgs = [];
 
-		this.constructor._keys().sort(commaSort).forEach((k) => {
+		(this.constructor as any)._keys().sort(commaSort).forEach((k) => {
 			// console.log("key", k);
 			if(byKey != null) { return; }
 
@@ -205,7 +219,7 @@ export default class DbRecord2 {
 	 * @param {*} locateValue - the database unique id of the record
 	 * @param {String} byKey - the field to search on. $_locateField by default.
 	 */
-	async _read(locateValue, byKey) {
+	async _read(locateValue: MysqlDatabase2.FieldValue, byKey = undefined) {
 		let field = byKey || this._locateField;
 		const forUpdate = this._options.forUpdate? "FOR UPDATE": "";
 
@@ -341,9 +355,11 @@ export default class DbRecord2 {
 		// Iterate
 		const _dbh = await this._getDbhClassStatic().masterDbh();
 
+		/*
 		if(TARGET === "development") {
 			console.log(`${_dbh._db.threadId}: will be running forEach query`);
 		}
+		*/
 
 		const rows = await _dbh.queryAsync(sql, qparam);
 		options.TOTAL = rows.length;
@@ -440,11 +456,11 @@ export default class DbRecord2 {
 			throw new Error(`${Class.name}: Object has uncommitted changes before transaction`);
 		}
 
-		const dbh = await Class.masterDbh();
+		const dbh = await (Class as any).masterDbh();
 		await dbh.execTransactionAsync(async () => {
 			const params = {};
 			params[this._locateField] = this[this._locateField]();
-			const me = new this.constructor(params);
+			const me = new (this.constructor as any)(params);
 			await me.init();
 
 			return await cb(me);
@@ -458,14 +474,14 @@ export default class DbRecord2 {
 	 * Returns MysqlDatabase class used for this DbRecord class
 	 * @private
 	 */
-	static _getDbhClassStatic() {
+	static _getDbhClassStatic(): typeof MysqlDatabase2 {
 		return MysqlDatabase2;
 	}
 	/**
 	 * Returns MysqlDatabase class used for this DbRecord object
 	 * @private
 	 */
-	_getDbhClass() {
+	_getDbhClass(): any  {
 		return MysqlDatabase2;
 	}
 }

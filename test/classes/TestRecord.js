@@ -1,5 +1,6 @@
 "use strict";
 const DbRecord2 = require('../../lib/DbRecord2');
+console.log(DbRecord2);
 
 const TABLE_NAME = "dbrecord_test";
 
