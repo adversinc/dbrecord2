@@ -1,6 +1,38 @@
 import lodashMerge from 'lodash/merge';
-import mysql from 'mysql';
+import * as mysql from 'mysql';
 import ContextStorage from 'cls-hooked';
+
+interface MysqlConfig {
+	host: string;
+	database: string;
+	user: string;
+	password: string;
+	names?: string;
+	debugSQL?: boolean;
+
+	reuseConnection?: boolean;
+
+	logger: {
+		log: (...args: any[]) => void;
+	};
+}
+
+interface TableRow {
+	[key: string]: MysqlDatabase2.FieldValue;
+}
+
+interface QueryResult extends Array<TableRow> {
+	length: number;
+	insertId: number;
+
+	forEach: ((cb: object) => void);
+}
+
+type QueryCallback = (err: string, res: QueryResult) => void;
+
+interface DbConnection extends mysql.Connection {
+	_seq?: number;
+}
 
 /**
  * The MySQL connection wrapper which provides the following features:
@@ -13,8 +45,8 @@ import ContextStorage from 'cls-hooked';
  *
  */
 
-let masterConfig = {};
-let masterDbh = null;
+let masterConfig: MysqlConfig = null;
+let masterDbh: MysqlDatabase2 = null;
 
 // Connection pool
 // If connection pool has been set up, MysqlDatabase will pick connections from it
@@ -43,6 +75,14 @@ let trxContext = ContextStorage.createNamespace('mysql-dbh');
  * dbh.commit();
  */
 class MysqlDatabase2 {
+	cid: string;
+
+	_config: MysqlConfig;
+	_db: DbConnection = null;
+	_createdFromPool: boolean = false;
+
+	_transacted: number = 0;
+
 	/**
 	 * config:
 	 * 	user, password, host - regular mysql connection settings
@@ -50,16 +90,12 @@ class MysqlDatabase2 {
 	 * 	debugSQL - log all SQL queries (debug)
 	 * @param config
 	 */
-	constructor(config) {
+	constructor(config: MysqlConfig) {
 		this._config = lodashMerge({}, config);
 
-		this._db = null;
-		this._createdFromPool = false;
 		if(!connectionPool) {
 			this._db = mysql.createConnection(this._config);
 		}
-
-		this._transacted = 0;
 	}
 
 	connect() {
@@ -69,12 +105,12 @@ class MysqlDatabase2 {
 					// console.log("connection taken from pool");
 					this._createdFromPool = true;
 					this._db = dbh;
-					this.cid = parseInt(Math.random() * 1000000) + "p";
+					this.cid = Math.ceil(Math.random() * 1000000) + "p";
 
 					// SQL logging
 					if(this._config.debugSQL) {
 						if(!this._db._seq) {
-							this._db._seq = parseInt(Math.random() * 100000);
+							this._db._seq = Math.ceil(Math.random() * 100000);
 						}
 
 						this._db.on('enqueue', function(sequence) {
@@ -89,10 +125,15 @@ class MysqlDatabase2 {
 					}
 				});
 			} else {
-				this.cid = parseInt(Math.random() * 1000000) + "s";
+				this.cid = Math.ceil(Math.random() * 1000000) + "s";
 
 				this._db.connect((err) => {
 					if(err) { reject(err); }
+
+					if(this._config.names) {
+						this.query(`SET NAMES "${this._config.names}"`);
+					}
+
 					resolve();
 				});
 			}
@@ -101,24 +142,24 @@ class MysqlDatabase2 {
 
 
 	disconnect() {
-		if(TARGET == "development") {
-			console.log(`${this._db.threadId}: closing mysql threadId`);
-		}
+		//if(TARGET == "development") {
+		//	console.log(`${this._db.threadId}: closing mysql threadId`);
+		//}
 
 		this._db.end();
 	}
 
 	closeAndExit() {
-		trxDb.destroy();
+		//trxDb.destroy();
 		setTimeout(() => { process.exit(); }, 500);
 	}
 
-	query(query, values, cb) {
+	query(query: string, values?: MysqlDatabase2.FieldValue[], cb?: mysql.queryCallback) {
 		return this._db.query(query, values, cb);
 	}
 
-	queryAsync(query, values) {
-		return new Promise((resolve, reject) => {
+	queryAsync(query: string, values?: MysqlDatabase2.FieldValue[]): Promise<QueryResult> {
+		return new Promise<QueryResult>((resolve, reject) => {
 			this.query(query, values, (err, res) => {
 				if(err) {
 					return reject(err);
@@ -168,11 +209,13 @@ class MysqlDatabase2 {
 			trxDb = this;
 			this._debug("reused dbh", trxDb.cid, this._transacted, this._config.reuseConnection);
 		} else {
+			/*
 			if(TARGET === "development") {
 				console.log(`Old ${this._db.threadId} is creating transaction connection`);
 			}
+			*/
 
-			trxDb = new this.constructor(this._config);
+			trxDb = new (this.constructor as any)(this._config);
 			trxDb._transacted = this._transacted;
 
 			await trxDb.connect();
@@ -260,7 +303,7 @@ class MysqlDatabase2 {
 	destroy() {
 		// Connections created from pool are to be released, direct connections destroyed
 		if(this._createdFromPool) {
-			if(this._db != null) { this._db.release(); }
+			if(this._db != null) { (this._db as mysql.PoolConnection).release(); }
 		} else {
 			this._db.destroy();
 		}
@@ -277,9 +320,9 @@ class MysqlDatabase2 {
 		setTimeout(() => { process.exit(); }, 500);
 	}
 
-	_debug() {
+	_debug(...args: any[]) {
 		if(this._config.logger) {
-			this._config.logger.log(...arguments);
+			this._config.logger.log(...args);
 		}
 	}
 
@@ -287,7 +330,7 @@ class MysqlDatabase2 {
 	 * The connection configuration for masterDbh
 	 * @param config
 	 */
-	static masterConfig(config) {
+	static masterConfig(config: MysqlConfig) {
 		masterConfig = config;
 	}
 
@@ -297,8 +340,8 @@ class MysqlDatabase2 {
 	 * @param {Object} options - additional options to pass to master dbh creation
 	 * @returns {MysqlDatabase2} current mysql database connection class
 	 */
-	static masterDbh(options = {}) {
-		return new Promise((resolve, reject) => {
+	static masterDbh(options?: MysqlConfig): Promise<MysqlDatabase2> {
+		return new Promise<MysqlDatabase2>((resolve, reject) => {
 			// First try to get the local scope dbh of the current transaction
 			const trxDbh = trxContext.get("dbh");
 			if(trxDbh) {
@@ -350,6 +393,12 @@ class MysqlDatabase2 {
 	static setupPool(config) {
 		this.masterConfig(config);
 		connectionPool = mysql.createPool(config);
+
+		connectionPool.on('connection',  (connection) => {
+			if(config.names) {
+				connection.query(`SET NAMES "${config.names}"`);
+			}
+		});
 	}
 
 	static destroyPoll() {
@@ -362,6 +411,11 @@ class MysqlDatabase2 {
 	}
 }
 
+namespace MysqlDatabase2 {
+	export interface DbConfig extends MysqlConfig {};
 
-export default MysqlDatabase2;
+	export type FieldValue = string|number|Date;
+}
+
+export = MysqlDatabase2;
 

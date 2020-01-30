@@ -5,6 +5,7 @@ const
 
 // Libs to test
 const MysqlDatabase = require("../lib/MysqlDatabase2");
+console.log("MysqlDatabase=", MysqlDatabase);
 
 // Tests
 describe('MysqlDatabase2 connection', function() {
