@@ -6,7 +6,20 @@ in to reading and write data, modify fields and so on.
 
 Important: the code has to run within an async function.
 
-#	Usage
+# Usage
+
+## Initialization
+```javascript
+  MysqlDatabase.masterConfig({
+    host: "host name",
+    database: "database name",
+    user: "user",
+    password: "password",
+    names: "optional encoding for SET NAMES"
+  });
+```
+
+## Objects
 
 ```javascript
 class MyObject extends DbRecord {

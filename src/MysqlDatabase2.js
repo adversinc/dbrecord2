@@ -93,6 +93,11 @@ class MysqlDatabase2 {
 
 				this._db.connect((err) => {
 					if(err) { reject(err); }
+
+					if(this._config.names) {
+						this.query(`SET NAMES "${this._config.names}"`);
+					}
+
 					resolve();
 				});
 			}
@@ -350,6 +355,12 @@ class MysqlDatabase2 {
 	static setupPool(config) {
 		this.masterConfig(config);
 		connectionPool = mysql.createPool(config);
+
+		connectionPool.on('connection',  (connection) => {
+			if(config.names) {
+				connection.query(`SET NAMES "${config.names}"`);
+			}
+		});
 	}
 
 	static destroyPoll() {
