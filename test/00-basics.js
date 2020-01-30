@@ -76,10 +76,17 @@ describe('MysqlDatabase2 basic ops', function() {
 	it('should throw on broken SQL', async function() {
 		const sql = "BROKEN_SELECT *";
 
-
 		await assert.rejects(async () => {
 			const res = await dbh.queryAsync(sql);
 		});
+	});
+
+
+	//
+	//
+	it('should have utf8mb4 charset', async function() {
+		const res = await dbh.getRow("SHOW VARIABLES LIKE 'character_set_client'");
+		assert.strictEqual(res.Value, "utf8mb4");
 	});
 });
 
