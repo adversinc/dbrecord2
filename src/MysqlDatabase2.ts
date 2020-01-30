@@ -158,6 +158,11 @@ class MysqlDatabase2 {
 		return this._db.query(query, values, cb);
 	}
 
+	/**
+	 * Execute asyncronous query
+	 * @param query
+	 * @param values
+	 */
 	queryAsync(query: string, values?: MysqlDatabase2.FieldValue[]): Promise<QueryResult> {
 		return new Promise<QueryResult>((resolve, reject) => {
 			this.query(query, values, (err, res) => {
@@ -195,11 +200,11 @@ class MysqlDatabase2 {
 	 * @param {Function} cb - the callback to call. Should return 'false' if
 	 * 	transaction should be rolled back
 	 */
-	async execTransaction(cb) {
+	async execTransaction(cb: MysqlDatabase2.TransactionCallback) {
 		return this.execTransactionAsync(cb);
 	}
 
-	async execTransactionAsync(cb) {
+	async execTransactionAsync(cb: MysqlDatabase2.TransactionCallback) {
 		// TODO GG: port the nested trasactions code here
 		let trxDb = null;
 
@@ -413,8 +418,9 @@ class MysqlDatabase2 {
 
 namespace MysqlDatabase2 {
 	export interface DbConfig extends MysqlConfig {};
-
 	export type FieldValue = string|number|Date;
+
+	export type TransactionCallback = (dbh: MysqlDatabase2) => Promise<boolean>;
 }
 
 export = MysqlDatabase2;

@@ -1,24 +1,18 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
 const strcount = require('quickly-count-substrings');
 
-interface DbRecordOptions {
-	dbh?: MysqlDatabase2;
-	forUpdate?: boolean;
-}
-
-interface CommitOptions {
-	behavior?: "INSERT"|"REPLACE";
-}
+type TransactionCallback = (me: DbRecord2) => Promise<boolean>;
+type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
 
 /**
  * Represents the database record class.
 **/
-export = class DbRecord2 {
+class DbRecord2 {
 	_dbh: MysqlDatabase2;
 	_raw: object;
 	_changes: object;
 	_super: object;
-	_options: DbRecordOptions;
+	_options: DbRecord2.DbRecordOptions;
 
 	_tableName: string;
 	_locateField: string;
@@ -35,7 +29,7 @@ export = class DbRecord2 {
 	 * @param {Boolean} [options.forUpdate] - read record with FOR UPDATE flag,
 	 * 	blocking it within the transaction
 	 */
-	constructor(options: DbRecordOptions = {}) {
+	constructor(options: DbRecord2.DbRecordOptions = {}) {
 		/**
 		 * The database handler to work with
 		 */
@@ -72,7 +66,7 @@ export = class DbRecord2 {
 	 * not throw an error for non-existing record and returns null instead.
 	 * @param options
 	 */
-	static async tryCreate(options = {}) {
+	static async tryCreate(options: DbRecord2.DbRecordOptions = {}): Promise<DbRecord2> {
 		try {
 			const obj = new this(options);
 			await obj.init();
@@ -108,7 +102,7 @@ export = class DbRecord2 {
 	 * 	"INSERT" forces to try inserting the record, regardless of _locateField
 	 * 	existance.
 	 */
-	async commit(options: CommitOptions = {}) {
+	async commit(options: DbRecord2.CommitOptions = {}) {
 		let sql = "";
 
 		if(Object.keys(this._changes).length === 0) {
@@ -346,7 +340,7 @@ export = class DbRecord2 {
 	 *
 	 * @returns {Number} the number of rows found
 	 */
-	static async forEach(options, cb) {
+	static async forEach(options: DbRecord2.ForEachOptions, cb: ForeachCallback) {
 		const where = [];
 		const qparam = [];
 		const sql = this._prepareForEach(options, where, qparam);
@@ -372,8 +366,16 @@ export = class DbRecord2 {
 
 				const o = {};
 				o[this._locatefield()] = row[this._locatefield()];
-				const obj = new this(o);
-				await obj.init();
+				let obj = null;
+
+				if(!options.noObjectCreate) {
+					obj = new this(o);
+					await obj.init();
+				}
+
+				if(options.provideRaw) {
+					options.raw = row;
+				}
 
 				// Wait for iterator to end
 				await cb(obj, options);
@@ -448,7 +450,7 @@ export = class DbRecord2 {
 	 * @param {Function} cb - function to run with a "me" newly created objec
 	 * @returns {Promise<void>}
 	 */
-	async transactionWithMe(cb) {
+	async transactionWithMe(cb: TransactionCallback) {
 		const Class = this.constructor;
 
 		// Make sure we are committed
@@ -486,6 +488,33 @@ export = class DbRecord2 {
 	}
 }
 
+namespace DbRecord2 {
+	export interface DbRecordOptions {
+		dbh?: MysqlDatabase2;
+		forUpdate?: boolean;
+	}
+
+	export interface CommitOptions {
+		behavior?: "INSERT"|"REPLACE";
+	}
+
+	export interface ForEachOptions {
+		TOTAL: number;
+		COUNTER: number;
+
+		raw?: object;
+
+		/**
+		 * Don't create an object while calling callback
+		 */
+		noObjectCreate?: boolean;
+		/**
+		 * Provide the raw representation of the object
+		 */
+		provideRaw?: boolean;
+	}
+}
+
 
 /**
  * The sorting function to get entries with more commas first
@@ -497,3 +526,5 @@ function commaSort(a,b) {
 	const cb = strcount(b, ",");
 	return ca>cb? -1 : 1;
 }
+
+export = DbRecord2;

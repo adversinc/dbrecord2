@@ -56,6 +56,11 @@ declare class MysqlDatabase2 {
     disconnect(): void;
     closeAndExit(): void;
     query(query: string, values?: MysqlDatabase2.FieldValue[], cb?: mysql.queryCallback): mysql.Query;
+    /**
+     * Execute asyncronous query
+     * @param query
+     * @param values
+     */
     queryAsync(query: string, values?: MysqlDatabase2.FieldValue[]): Promise<QueryResult>;
     /**
      * A shortcut function to get a single rows without messing with row arrays
@@ -74,8 +79,8 @@ declare class MysqlDatabase2 {
      * @param {Function} cb - the callback to call. Should return 'false' if
      * 	transaction should be rolled back
      */
-    execTransaction(cb: any): Promise<any>;
-    execTransactionAsync(cb: any): Promise<any>;
+    execTransaction(cb: MysqlDatabase2.TransactionCallback): Promise<any>;
+    execTransactionAsync(cb: MysqlDatabase2.TransactionCallback): Promise<any>;
     /**
      * Commits the current database transaction
      */
@@ -124,5 +129,6 @@ declare namespace MysqlDatabase2 {
     interface DbConfig extends MysqlConfig {
     }
     type FieldValue = string | number | Date;
+    type TransactionCallback = (dbh: MysqlDatabase2) => Promise<boolean>;
 }
 export = MysqlDatabase2;
