@@ -215,7 +215,7 @@ class MysqlDatabase2 {
 			}
 			*/
 
-			trxDb = new MysqlDatabase2(this._config);
+			trxDb = new (this.constructor as any)(this._config);
 			trxDb._transacted = this._transacted;
 
 			await trxDb.connect();
