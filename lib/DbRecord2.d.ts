@@ -170,11 +170,17 @@ declare namespace DbRecord2 {
         behavior?: "INSERT" | "REPLACE";
     }
     interface ForEachOptions {
+        /**
+         * Total objects in iteration
+         */
         TOTAL: number;
         /**
          * Current object index in iteration
          */
         COUNTER: number;
+        /**
+         * Raw object fields if ordered by 'provideRaw'
+         */
         raw?: object;
         /**
          * Don't create an object while calling callback
