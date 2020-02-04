@@ -499,9 +499,18 @@ namespace DbRecord2 {
 	}
 
 	export interface ForEachOptions {
+		/**
+		 * Total objects in iteration
+		 */
 		TOTAL: number;
+		/**
+		 * Current object index in iteration
+		 */
 		COUNTER: number;
 
+		/**
+		 * Raw object fields if ordered by 'provideRaw'
+		 */
 		raw?: object;
 
 		/**
@@ -512,6 +521,15 @@ namespace DbRecord2 {
 		 * Provide the raw representation of the object
 		 */
 		provideRaw?: boolean;
+	}
+
+	/**
+	 * Field access function types
+	 */
+	export namespace Column {
+		export type String = (value?: string) => string;
+		export type Number = (value?: Number) => Number;
+		export type Date = (value?: Date) => Date;
 	}
 }
 

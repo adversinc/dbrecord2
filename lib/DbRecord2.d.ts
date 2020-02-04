@@ -171,6 +171,9 @@ declare namespace DbRecord2 {
     }
     interface ForEachOptions {
         TOTAL: number;
+        /**
+         * Current object index in iteration
+         */
         COUNTER: number;
         raw?: object;
         /**
@@ -181,6 +184,14 @@ declare namespace DbRecord2 {
          * Provide the raw representation of the object
          */
         provideRaw?: boolean;
+    }
+    /**
+     * Field access function types
+     */
+    namespace Column {
+        type String = (value?: string) => string;
+        type Number = (value?: Number) => Number;
+        type Date = (value?: Date) => Date;
     }
 }
 export = DbRecord2;
