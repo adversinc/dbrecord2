@@ -1,17 +1,18 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
-declare type TransactionCallback = (me: DbRecord2) => Promise<boolean>;
-declare type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
+declare type TransactionCallback<T> = (me: DbRecord2<T>) => Promise<boolean>;
+declare type ForeachCallback<T> = (item: DbRecord2<T>, options: DbRecord2.ForEachOptions) => Promise<void>;
 /**
  * Represents the database record class.
 **/
-declare class DbRecord2 {
+declare class DbRecord2<T> {
     _dbh: MysqlDatabase2;
     _raw: object;
     _changes: object;
     _super: object;
-    _options: DbRecord2.DbRecordOptions;
+    _options: DbRecord2.ObjectInitializer<T>;
     _tableName: string;
     _locateField: string;
+    _keysList: string[];
     static _table(): string;
     static _locatefield(): string;
     static _keys(): string[];
@@ -23,7 +24,7 @@ declare class DbRecord2 {
      * @param {Boolean} [options.forUpdate] - read record with FOR UPDATE flag,
      * 	blocking it within the transaction
      */
-    constructor(options?: DbRecord2.DbRecordOptions);
+    constructor(options?: DbRecord2.ObjectInitializer<T>);
     /**
      * Initialize class structures, read database
      * @returns {Promise<void>}
@@ -34,13 +35,13 @@ declare class DbRecord2 {
      * not throw an error for non-existing record and returns null instead.
      * @param options
      */
-    static tryCreate(options?: DbRecord2.DbRecordOptions): Promise<DbRecord2>;
+    static tryCreate<T>(options?: DbRecord2.ObjectInitializer<T>): Promise<DbRecord2<T>>;
     /** Creates a new database record, populating it from the fields list
      * @param {Object} fields
      * @param {Object} [options] - options for database creation
      * @returns {DbRecord} the newly created object
      */
-    static newRecord(fields: any, options?: {}): Promise<DbRecord2>;
+    static newRecord<T>(fields: any, options?: {}): Promise<DbRecord2<unknown>>;
     /**
      * Save accumulated changed fields, if any
      * @param {Object} options
@@ -133,7 +134,7 @@ declare class DbRecord2 {
      *
      * @returns {Number} the number of rows found
      */
-    static forEach(options: DbRecord2.ForEachOptions, cb: ForeachCallback): Promise<number>;
+    static forEach<T>(options: DbRecord2.ForEachOptions, cb: ForeachCallback<T>): Promise<number>;
     /**
      * Prepares SQL and param arrays for forEach()
      * @param options
@@ -149,7 +150,7 @@ declare class DbRecord2 {
      * @param {Function} cb - function to run with a "me" newly created objec
      * @returns {Promise<void>}
      */
-    transactionWithMe(cb: TransactionCallback): Promise<void>;
+    transactionWithMe(cb: TransactionCallback<T>): Promise<void>;
     /**
      * Returns MysqlDatabase class used for this DbRecord class
      * @private
@@ -161,11 +162,25 @@ declare class DbRecord2 {
      */
     _getDbhClass(): any;
 }
+/**
+ * Standard options to initialize record
+ */
+interface GenericInitializer {
+    dbh?: MysqlDatabase2;
+    forUpdate?: boolean;
+}
+/**
+ * Custom options to initialize record
+ */
+interface TypedInitializer<T> {
+    [key: string]: DbRecord2.DbField;
+}
 declare namespace DbRecord2 {
-    interface DbRecordOptions {
-        dbh?: MysqlDatabase2;
-        forUpdate?: boolean;
-    }
+    /**
+     * Possible types of db fields
+     */
+    type DbField = string | number | Date;
+    type ObjectInitializer<T> = GenericInitializer & TypedInitializer<T>;
     interface CommitOptions {
         behavior?: "INSERT" | "REPLACE";
     }
@@ -199,5 +214,26 @@ declare namespace DbRecord2 {
         type Number = (value?: Number) => Number;
         type Date = (value?: Date) => Date;
     }
+    const Columns: {
+        aDecorator: (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
+    };
+    /**
+     * Add value to mysql SET field
+     * @param currentValue
+     * @param newValue
+     */
+    function setFieldSet(currentValue: string, newValue: string): string;
+    /**
+     * Remove value from mysql SET field
+     * @param currentValue
+     * @param toRemove
+     */
+    function setFieldRemove(currentValue: string, toRemove: string): string;
+    /**
+     * Check if value in in mysql SET field
+     * @param currentValue
+     * @param toRemove
+     */
+    function setFieldCheck(currentValue: string, check: string): boolean;
 }
 export = DbRecord2;

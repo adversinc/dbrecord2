@@ -1,21 +1,24 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
 const strcount = require('quickly-count-substrings');
 
-type TransactionCallback = (me: DbRecord2) => Promise<boolean>;
-type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
+type TransactionCallback<T> =
+	(me: DbRecord2<T>) => Promise<boolean>;
+type ForeachCallback<T> =
+	(item: DbRecord2<T>, options: DbRecord2.ForEachOptions) => Promise<void>;
 
 /**
  * Represents the database record class.
 **/
-class DbRecord2 {
+class DbRecord2<T> {
 	_dbh: MysqlDatabase2;
 	_raw: object;
 	_changes: object;
 	_super: object;
-	_options: DbRecord2.DbRecordOptions;
+	_options: DbRecord2.ObjectInitializer<T>;
 
 	_tableName: string;
 	_locateField: string;
+	_keysList: string[];
 
 	static _table(): string { throw "DbRecord can't be created directly"; }
 	static _locatefield(): string { throw "DbRecord can't be created directly"; }
@@ -29,7 +32,7 @@ class DbRecord2 {
 	 * @param {Boolean} [options.forUpdate] - read record with FOR UPDATE flag,
 	 * 	blocking it within the transaction
 	 */
-	constructor(options: DbRecord2.DbRecordOptions = {}) {
+	constructor(options: DbRecord2.ObjectInitializer<T> = {}) {
 		/**
 		 * The database handler to work with
 		 */
@@ -39,6 +42,7 @@ class DbRecord2 {
 
 		this._tableName = (this.constructor as any)._table();
 		this._locateField = (this.constructor as any)._locatefield();
+		this._keysList = (this.constructor as any)._keys();
 
 		this._options = Object.assign({}, options);
 	}
@@ -66,7 +70,7 @@ class DbRecord2 {
 	 * not throw an error for non-existing record and returns null instead.
 	 * @param options
 	 */
-	static async tryCreate(options: DbRecord2.DbRecordOptions = {}): Promise<DbRecord2> {
+	static async tryCreate<T>(options: DbRecord2.ObjectInitializer<T> = {}): Promise<DbRecord2<T>> {
 		try {
 			const obj = new this(options);
 			await obj.init();
@@ -82,7 +86,7 @@ class DbRecord2 {
 	 * @param {Object} [options] - options for database creation
 	 * @returns {DbRecord} the newly created object
 	 */
-	static async newRecord(fields, options = {}) {
+	static async newRecord<T>(fields, options = {}) {
 		const obj = new this();
 		await obj.init();
 
@@ -172,7 +176,7 @@ class DbRecord2 {
 		let byKey = null;
 		const keyArgs = [];
 
-		(this.constructor as any)._keys().sort(commaSort).forEach((k) => {
+		this._keysList.sort(commaSort).forEach((k) => {
 			// console.log("key", k);
 			if(byKey != null) { return; }
 
@@ -340,7 +344,7 @@ class DbRecord2 {
 	 *
 	 * @returns {Number} the number of rows found
 	 */
-	static async forEach(options: DbRecord2.ForEachOptions, cb: ForeachCallback) {
+	static async forEach<T>(options: DbRecord2.ForEachOptions, cb: ForeachCallback<T>) {
 		const where = [];
 		const qparam = [];
 		const sql = this._prepareForEach(options, where, qparam);
@@ -450,7 +454,7 @@ class DbRecord2 {
 	 * @param {Function} cb - function to run with a "me" newly created objec
 	 * @returns {Promise<void>}
 	 */
-	async transactionWithMe(cb: TransactionCallback) {
+	async transactionWithMe(cb: TransactionCallback<T>) {
 		const Class = this.constructor;
 
 		// Make sure we are committed
@@ -462,7 +466,7 @@ class DbRecord2 {
 		await dbh.execTransactionAsync(async () => {
 			const params = {};
 			params[this._locateField] = this[this._locateField]();
-			const me = new (this.constructor as any)(params);
+			const me = new (Class as any)(params);
 			await me.init();
 
 			return await cb(me);
@@ -488,11 +492,28 @@ class DbRecord2 {
 	}
 }
 
+/**
+ * Standard options to initialize record
+ */
+interface GenericInitializer {
+	dbh?: MysqlDatabase2;
+	forUpdate?: boolean;
+}
+
+/**
+ * Custom options to initialize record
+ */
+interface TypedInitializer<T> {
+	[key: string]: DbRecord2.DbField;
+}
+
 namespace DbRecord2 {
-	export interface DbRecordOptions {
-		dbh?: MysqlDatabase2;
-		forUpdate?: boolean;
-	}
+	/**
+	 * Possible types of db fields
+	 */
+	export type DbField = string | number | Date;
+	export type ObjectInitializer<T> = GenericInitializer & TypedInitializer<T>;
+
 
 	export interface CommitOptions {
 		behavior?: "INSERT"|"REPLACE";
@@ -530,6 +551,46 @@ namespace DbRecord2 {
 		export type String = (value?: string) => string;
 		export type Number = (value?: Number) => Number;
 		export type Date = (value?: Date) => Date;
+	}
+
+	export const Columns = {
+		aDecorator: function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+
+		}
+	}
+
+	/**
+	 * Add value to mysql SET field
+	 * @param currentValue
+	 * @param newValue
+	 */
+	export function setFieldSet(currentValue: string, newValue: string): string {
+		const parts = (typeof(currentValue) === "string" && currentValue !== "")?
+			currentValue.split(","):
+			[];
+		parts.push(newValue);
+		return parts.join(",");
+	}
+
+	/**
+	 * Remove value from mysql SET field
+	 * @param currentValue
+	 * @param toRemove
+	 */
+	export function setFieldRemove(currentValue: string, toRemove: string): string {
+		let parts = (typeof(currentValue) === "string")? currentValue.split(","): [];
+		parts = parts.filter(v => v !== toRemove);
+		return parts.join(",");
+	}
+
+	/**
+	 * Check if value in in mysql SET field
+	 * @param currentValue
+	 * @param toRemove
+	 */
+	export function setFieldCheck(currentValue: string, check: string): boolean {
+		const parts = (typeof(currentValue) === "string")? currentValue.split(","): [];
+		return parts.includes(check);
 	}
 }
 
