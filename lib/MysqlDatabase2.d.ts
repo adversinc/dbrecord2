@@ -39,6 +39,9 @@ interface DbConnection extends mysql.Connection {
  * dbh.commit();
  */
 declare class MysqlDatabase2 {
+    /**
+     * Generated connection id (_db.threadId also can be used);
+     */
     cid: string;
     _config: MysqlConfig;
     _db: DbConnection;

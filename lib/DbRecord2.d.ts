@@ -9,9 +9,10 @@ declare class DbRecord2 {
     _raw: object;
     _changes: object;
     _super: object;
-    _options: DbRecord2.DbRecordOptions;
+    _options: DbRecord2.ObjectInitializer;
     _tableName: string;
     _locateField: string;
+    _keysList: string[];
     static _table(): string;
     static _locatefield(): string;
     static _keys(): string[];
@@ -23,7 +24,7 @@ declare class DbRecord2 {
      * @param {Boolean} [options.forUpdate] - read record with FOR UPDATE flag,
      * 	blocking it within the transaction
      */
-    constructor(options?: DbRecord2.DbRecordOptions);
+    constructor(options?: DbRecord2.ObjectInitializer);
     /**
      * Initialize class structures, read database
      * @returns {Promise<void>}
@@ -34,7 +35,9 @@ declare class DbRecord2 {
      * not throw an error for non-existing record and returns null instead.
      * @param options
      */
-    static tryCreate(options?: DbRecord2.DbRecordOptions): Promise<DbRecord2>;
+    static tryCreate<T extends DbRecord2>(this: {
+        new ({}: {}): T;
+    }, options?: DbRecord2.ObjectInitializer): Promise<T>;
     /** Creates a new database record, populating it from the fields list
      * @param {Object} fields
      * @param {Object} [options] - options for database creation
@@ -162,14 +165,31 @@ declare class DbRecord2 {
     _getDbhClass(): any;
 }
 declare namespace DbRecord2 {
-    interface DbRecordOptions {
+    /**
+     * Possible types of db fields
+     */
+    export type DbField = string | number | Date;
+    /**
+     * Standard options to initialize record
+     */
+    interface GenericInitializer {
         dbh?: MysqlDatabase2;
         forUpdate?: boolean;
     }
-    interface CommitOptions {
+    /**
+     * Custom options to initialize record
+     */
+    interface TypedInitializer {
+        [key: string]: DbRecord2.DbField;
+    }
+    /**
+     * Custom options to initialize record
+     */
+    export type ObjectInitializer = GenericInitializer & TypedInitializer;
+    export interface CommitOptions {
         behavior?: "INSERT" | "REPLACE";
     }
-    interface ForEachOptions {
+    export interface ForEachOptions {
         /**
          * Total objects in iteration
          */
@@ -194,10 +214,29 @@ declare namespace DbRecord2 {
     /**
      * Field access function types
      */
-    namespace Column {
+    export namespace Column {
         type String = (value?: string) => string;
         type Number = (value?: Number) => Number;
-        type Date = (value?: Date) => Date;
+        type DateTime = (value?: Date) => Date;
     }
+    /**
+     * Add value to mysql SET field
+     * @param currentValue
+     * @param newValue
+     */
+    export function setFieldSet(currentValue: string, newValue: string): string;
+    /**
+     * Remove value from mysql SET field
+     * @param currentValue
+     * @param toRemove
+     */
+    export function setFieldRemove(currentValue: string, toRemove: string): string;
+    /**
+     * Check if value in in mysql SET field
+     * @param currentValue
+     * @param toRemove
+     */
+    export function setFieldCheck(currentValue: string, check: string): boolean;
+    export {};
 }
 export = DbRecord2;

@@ -75,6 +75,9 @@ let trxContext = ContextStorage.createNamespace('mysql-dbh');
  * dbh.commit();
  */
 class MysqlDatabase2 {
+	/**
+	 * Generated connection id (_db.threadId also can be used);
+	 */
 	cid: string;
 
 	_config: MysqlConfig;
