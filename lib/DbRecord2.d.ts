@@ -1,5 +1,5 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
-declare type TransactionCallback = (me: DbRecord2) => Promise<boolean>;
+declare type TransactionCallback = (me: DbRecord2) => Promise<boolean> | Promise<void> | boolean | void;
 declare type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
 /**
  * Represents the database record class.
@@ -152,7 +152,7 @@ declare class DbRecord2 {
      * @param {Function} cb - function to run with a "me" newly created objec
      * @returns {Promise<void>}
      */
-    transactionWithMe(cb: TransactionCallback): Promise<void>;
+    transactionWithMe<T extends DbRecord2>(this: T, cb: TransactionCallback): Promise<void>;
     /**
      * Returns MysqlDatabase class used for this DbRecord class
      * @private

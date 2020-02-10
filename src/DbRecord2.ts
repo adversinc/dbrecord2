@@ -1,7 +1,8 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
 const strcount = require('quickly-count-substrings');
 
-type TransactionCallback = (me: DbRecord2) => Promise<boolean>;
+// It actually returns Promise<boolean> but DbRecord requires boolean
+type TransactionCallback = (me: DbRecord2) => Promise<boolean>|Promise<void>|boolean|void;
 type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
 
 /**
@@ -452,7 +453,7 @@ class DbRecord2 {
 	 * @param {Function} cb - function to run with a "me" newly created objec
 	 * @returns {Promise<void>}
 	 */
-	async transactionWithMe(cb: TransactionCallback) {
+	async transactionWithMe<T extends DbRecord2>(this: T, cb: TransactionCallback) {
 		const Class = this.constructor;
 
 		// Make sure we are committed
