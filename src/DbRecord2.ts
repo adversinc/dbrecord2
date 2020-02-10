@@ -551,7 +551,7 @@ namespace DbRecord2 {
 	 */
 	export namespace Column {
 		export type String = (value?: string) => string;
-		export type Number = (value?: Number) => Number;
+		export type Number = (value?: Number) => number;
 		export type DateTime = (value?: Date) => Date;
 	}
 

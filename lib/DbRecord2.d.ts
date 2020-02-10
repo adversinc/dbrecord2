@@ -216,7 +216,7 @@ declare namespace DbRecord2 {
      */
     export namespace Column {
         type String = (value?: string) => string;
-        type Number = (value?: Number) => Number;
+        type Number = (value?: Number) => number;
         type DateTime = (value?: Date) => Date;
     }
     /**
