@@ -1,15 +1,22 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
 declare type TransactionCallback = (me: DbRecord2) => Promise<boolean> | Promise<void> | boolean | void;
 declare type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
+interface ChangedFields {
+    [key: string]: boolean;
+}
 /**
  * Represents the database record class.
 **/
 declare class DbRecord2 {
     _dbh: MysqlDatabase2;
-    _raw: object;
-    _changes: object;
+    _raw: DbRecord2.ObjectInitializer;
+    _changes: ChangedFields;
+    /** To hold the existing access method functions */
     _super: object;
-    _options: DbRecord2.ObjectInitializer;
+    /** Initial values of the object */
+    _values: DbRecord2.ObjectInitializer;
+    /** Object creation options */
+    _initOptions: DbRecord2.InitializerOptions;
     _tableName: string;
     _locateField: string;
     _keysList: string[];
@@ -20,11 +27,12 @@ declare class DbRecord2 {
      * Creates the class instance. If options.${_locatefield()} parameter is specified,
      * reads the data from the database and put them into the internal structures
      * (see _init() and _read())
-     * @param {Object} [options]
-     * @param {Boolean} [options.forUpdate] - read record with FOR UPDATE flag,
+     * @param {Object} [values]
+     * @param {Object} [initOptions]
+     * @param {Boolean} [initOptions.forUpdate] - read record with FOR UPDATE flag,
      * 	blocking it within the transaction
      */
-    constructor(options?: DbRecord2.ObjectInitializer);
+    constructor(values?: DbRecord2.ObjectInitializer, initOptions?: DbRecord2.InitializerOptions);
     /**
      * Initialize class structures, read database
      * @returns {Promise<void>}
@@ -33,17 +41,18 @@ declare class DbRecord2 {
     /**
      * Tries creating an object by locate field/keys. Unlike constructor, does
      * not throw an error for non-existing record and returns null instead.
+     * @param values
      * @param options
      */
     static tryCreate<T extends DbRecord2>(this: {
-        new ({}: {}): T;
-    }, options?: DbRecord2.ObjectInitializer): Promise<T>;
+        new ({}: {}, {}: {}): T;
+    }, values?: DbRecord2.ObjectInitializer, options?: DbRecord2.InitializerOptions): Promise<T>;
     /** Creates a new database record, populating it from the fields list
      * @param {Object} fields
      * @param {Object} [options] - options for database creation
      * @returns {DbRecord} the newly created object
      */
-    static newRecord(fields: any, options?: {}): Promise<DbRecord2>;
+    static newRecord(fields: DbRecord2.ObjectInitializer): Promise<DbRecord2>;
     /**
      * Save accumulated changed fields, if any
      * @param {Object} options
@@ -62,7 +71,7 @@ declare class DbRecord2 {
      * @param options
      * @protected
      */
-    _init(options: any): Promise<void>;
+    _init(): Promise<void>;
     /**
      * Reads values from the database, puts them into _raw and creates a function
      * to get each value, so we can access fields as:
@@ -72,7 +81,7 @@ declare class DbRecord2 {
      * @param {*} locateValue - the database unique id of the record
      * @param {String} byKey - the field to search on. $_locateField by default.
      */
-    _read(locateValue: MysqlDatabase2.FieldValue, byKey?: any): Promise<void>;
+    _read(locateValue: MysqlDatabase2.FieldValue, byKey?: string): Promise<void>;
     /**
      * Does the same work as _read, but accepts the secondary keys and values arrays
      * @param keys {Array}
@@ -100,13 +109,13 @@ declare class DbRecord2 {
      * @param value
      * @private
      */
-    _accessField(field: any, value: any): any;
+    _accessField(field: string, value: DbRecord2.DbField): string | number | Date;
     /**
      * Creates a function within this class to get/set the certain field
      * @param field
      * @private
      */
-    _createAccessMethod(field: any): void;
+    _createAccessMethod(field: string): void;
     /**
      * Removes the record from the database. No verification or integrity checks
      * are being performed, they are up to caller.
@@ -145,7 +154,7 @@ declare class DbRecord2 {
      * @returns {string}
      * @private
      */
-    static _prepareForEach(options: any, where: any, qparam: any): string;
+    static _prepareForEach(options: DbRecord2.ForEachOptions, where: any, qparam: any): string;
     /**
      * Starts a transaction and creates an instance of our object within that
      * transaction, passing it to the callback
@@ -168,36 +177,34 @@ declare namespace DbRecord2 {
     /**
      * Possible types of db fields
      */
-    export type DbField = string | number | Date;
+    type DbField = string | number | Date;
     /**
      * Standard options to initialize record
      */
-    interface GenericInitializer {
+    interface InitializerOptions {
         dbh?: MysqlDatabase2;
         forUpdate?: boolean;
     }
     /**
      * Custom options to initialize record
      */
-    interface TypedInitializer {
+    interface ObjectInitializer {
         [key: string]: DbRecord2.DbField;
     }
-    /**
-     * Custom options to initialize record
-     */
-    export type ObjectInitializer = GenericInitializer & TypedInitializer;
-    export interface CommitOptions {
+    interface CommitOptions {
         behavior?: "INSERT" | "REPLACE";
     }
-    export interface ForEachOptions {
-        /**
-         * Total objects in iteration
-         */
+    interface ForEachOptions {
+        /** Total objects in iteration */
         TOTAL: number;
-        /**
-         * Current object index in iteration
-         */
+        /** Current object index in iteration */
         COUNTER: number;
+        /** Ordering field/expression */
+        ORDERBY?: string;
+        /** Limit SQL expression */
+        LIMIT?: string;
+        /** Log resulting query */
+        DEBUG_SQL_QUERY?: boolean;
         /**
          * Raw object fields if ordered by 'provideRaw'
          */
@@ -206,15 +213,17 @@ declare namespace DbRecord2 {
          * Don't create an object while calling callback
          */
         noObjectCreate?: boolean;
-        /**
-         * Provide the raw representation of the object
-         */
+        /** Provide the raw representation of the object */
         provideRaw?: boolean;
+        /** If required to lock records with FOR UPDATE */
+        forUpdate?: boolean;
+        whereCond?: string[];
+        whereParam?: DbRecord2.DbField[];
     }
     /**
      * Field access function types
      */
-    export namespace Column {
+    namespace Column {
         type String = (value?: string) => string;
         type Number = (value?: number) => number;
         type DateTime = (value?: Date) => Date;
@@ -224,19 +233,18 @@ declare namespace DbRecord2 {
      * @param currentValue
      * @param newValue
      */
-    export function setFieldSet(currentValue: string, newValue: string): string;
+    function setFieldSet(currentValue: string, newValue: string): string;
     /**
      * Remove value from mysql SET field
      * @param currentValue
      * @param toRemove
      */
-    export function setFieldRemove(currentValue: string, toRemove: string): string;
+    function setFieldRemove(currentValue: string, toRemove: string): string;
     /**
      * Check if value in in mysql SET field
      * @param currentValue
      * @param toRemove
      */
-    export function setFieldCheck(currentValue: string, check: string): boolean;
-    export {};
+    function setFieldCheck(currentValue: string, check: string): boolean;
 }
 export = DbRecord2;

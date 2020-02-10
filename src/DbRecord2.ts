@@ -5,15 +5,24 @@ const strcount = require('quickly-count-substrings');
 type TransactionCallback = (me: DbRecord2) => Promise<boolean>|Promise<void>|boolean|void;
 type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
 
+interface ChangedFields {
+	[key: string]: boolean;
+}
+
 /**
  * Represents the database record class.
 **/
 class DbRecord2 {
 	_dbh: MysqlDatabase2;
-	_raw: object;
-	_changes: object;
-	_super: object;
-	_options: DbRecord2.ObjectInitializer;
+	_raw: DbRecord2.ObjectInitializer = {};
+	_changes: ChangedFields = {};
+	/** To hold the existing access method functions */
+	_super: object = {};
+
+	/** Initial values of the object */
+	_values: DbRecord2.ObjectInitializer;
+	/** Object creation options */
+	_initOptions: DbRecord2.InitializerOptions;
 
 	_tableName: string;
 	_locateField: string;
@@ -27,23 +36,19 @@ class DbRecord2 {
 	 * Creates the class instance. If options.${_locatefield()} parameter is specified,
 	 * reads the data from the database and put them into the internal structures
 	 * (see _init() and _read())
-	 * @param {Object} [options]
-	 * @param {Boolean} [options.forUpdate] - read record with FOR UPDATE flag,
+	 * @param {Object} [values]
+	 * @param {Object} [initOptions]
+	 * @param {Boolean} [initOptions.forUpdate] - read record with FOR UPDATE flag,
 	 * 	blocking it within the transaction
 	 */
-	constructor(options: DbRecord2.ObjectInitializer = {}) {
-		/**
-		 * The database handler to work with
-		 */
-		this._raw = {};
-		this._changes = {};
-		this._super = {}; // To hold the existing access method functions
-
+	constructor(values: DbRecord2.ObjectInitializer = {},
+							initOptions: DbRecord2.InitializerOptions = {}) {
 		this._tableName = (this.constructor as any)._table();
 		this._locateField = (this.constructor as any)._locatefield();
 		this._keysList = (this.constructor as any)._keys();
 
-		this._options = Object.assign({}, options);
+		this._values = Object.assign({}, values);
+		this._initOptions = Object.assign({}, initOptions);
 	}
 
 	/**
@@ -52,26 +57,28 @@ class DbRecord2 {
 	 */
 	async init() {
 		// Use either locally provided or database handler factory
-		if(this._options.dbh) {
-			this._dbh = this._options.dbh;
+		if(this._initOptions.dbh) {
+			this._dbh = this._initOptions.dbh;
 		} else {
 			this._dbh = await this._getDbhClass().masterDbh();
 		}
 
 		//console.log("using trxDbh:", this._dbh.cid);
-
-		await this._init(this._options);
+		await this._init();
 	}
 
 
 	/**
 	 * Tries creating an object by locate field/keys. Unlike constructor, does
 	 * not throw an error for non-existing record and returns null instead.
+	 * @param values
 	 * @param options
 	 */
-	static async tryCreate<T extends DbRecord2>(this: { new({}): T }, options: DbRecord2.ObjectInitializer = {}): Promise<T> {
+	static async tryCreate<T extends DbRecord2>(this: { new({},{}): T },
+			values: DbRecord2.ObjectInitializer = {},
+			options: DbRecord2.InitializerOptions = {}): Promise<T> {
 		try {
-			const obj = new this(options);
+			const obj = new this(values, options);
 			await obj.init();
 			return obj;
 		} catch(ex) {
@@ -85,7 +92,7 @@ class DbRecord2 {
 	 * @param {Object} [options] - options for database creation
 	 * @returns {DbRecord} the newly created object
 	 */
-	static async newRecord(fields, options = {}) {
+	static async newRecord(fields: DbRecord2.ObjectInitializer) {
 		const obj = new this();
 		await obj.init();
 
@@ -171,7 +178,7 @@ class DbRecord2 {
 	 * @param options
 	 * @protected
 	 */
-	async _init(options) {
+	async _init() {
 		let byKey = null;
 		const keyArgs = [];
 
@@ -182,21 +189,21 @@ class DbRecord2 {
 			// Check if all key parts are present
 			let fits = true;
 			k.split(",").forEach((kpart) => {
-				if(!(kpart in options)) { fits = false; }
+				if(!(kpart in this._values)) { fits = false; }
 			});
 
 			if(fits) {
 				// Key fits, remember it and its arguments
 				byKey = k.split(",");
 				byKey.forEach((kpart) => {
-					keyArgs.push(options[kpart]);
+					keyArgs.push(this._values[kpart]);
 				});
 			}
 		});
 
 		// if "_locateField" is set, then we need to read our data from the database
-		if(this._locateField in options) {
-			await this._read(options[this._locateField]);
+		if(this._locateField in this._values) {
+			await this._read(this._values[this._locateField]);
 		}
 		else if(byKey) {
 			await this._readByKey(byKey, keyArgs);
@@ -216,9 +223,9 @@ class DbRecord2 {
 	 * @param {*} locateValue - the database unique id of the record
 	 * @param {String} byKey - the field to search on. $_locateField by default.
 	 */
-	async _read(locateValue: MysqlDatabase2.FieldValue, byKey = undefined) {
+	async _read(locateValue: MysqlDatabase2.FieldValue, byKey: string = undefined) {
 		let field = byKey || this._locateField;
-		const forUpdate = this._options.forUpdate? "FOR UPDATE": "";
+		const forUpdate = this._initOptions.forUpdate? "FOR UPDATE": "";
 
 		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${field}=? LIMIT 1 ${forUpdate}`,
 			[locateValue]);
@@ -234,7 +241,7 @@ class DbRecord2 {
 	 */
 	async _readByKey(keys, values) {
 		const fields = keys.join("=? AND ") + "=?";
-		const forUpdate = this._options.forUpdate? "FOR UPDATE": "";
+		const forUpdate = this._initOptions.forUpdate? "FOR UPDATE": "";
 
 		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${fields} LIMIT 1 ${forUpdate}`,
 			values);
@@ -276,7 +283,7 @@ class DbRecord2 {
 	 * @param value
 	 * @private
 	 */
-	_accessField(field, value) {
+	_accessField(field: string, value: DbRecord2.DbField) {
 		// To set NULL field: class.field(null)
 		if(value !== undefined) {
 			this._changes[field] = true;
@@ -291,7 +298,7 @@ class DbRecord2 {
 	 * @param field
 	 * @private
 	 */
-	_createAccessMethod(field) {
+	_createAccessMethod(field: string) {
 		//console.log("creating", field, typeof this[field]);
 		const f = (value = undefined) => { return this._accessField(field, value); };
 
@@ -344,8 +351,8 @@ class DbRecord2 {
 	 * @returns {Number} the number of rows found
 	 */
 	static async forEach(options: DbRecord2.ForEachOptions, cb: ForeachCallback) {
-		const where = [];
-		const qparam = [];
+		const where: string[] = [];
+		const qparam: DbRecord2.DbField[] = [];
 		const sql = this._prepareForEach(options, where, qparam);
 
 		//
@@ -399,7 +406,7 @@ class DbRecord2 {
 	 * @returns {string}
 	 * @private
 	 */
-	static _prepareForEach(options, where, qparam) {
+	static _prepareForEach(options: DbRecord2.ForEachOptions, where, qparam) {
 		let sql = `SELECT ${this._locatefield()} FROM ${this._table()}`;
 		if(options.forUpdate) { sql += " FOR UPDATE"; }
 
@@ -500,7 +507,7 @@ namespace DbRecord2 {
 	/**
 	 * Standard options to initialize record
 	 */
-	interface GenericInitializer {
+	export interface InitializerOptions {
 		dbh?: MysqlDatabase2;
 		forUpdate?: boolean;
 	}
@@ -508,14 +515,9 @@ namespace DbRecord2 {
 	/**
 	 * Custom options to initialize record
 	 */
-	interface TypedInitializer {
+	export interface ObjectInitializer {
 		[key: string]: DbRecord2.DbField;
 	}
-
-	/**
-	 * Custom options to initialize record
-	 */
-	export type ObjectInitializer = GenericInitializer & TypedInitializer;
 
 
 	export interface CommitOptions {
@@ -523,14 +525,18 @@ namespace DbRecord2 {
 	}
 
 	export interface ForEachOptions {
-		/**
-		 * Total objects in iteration
-		 */
+		/** Total objects in iteration */
 		TOTAL: number;
-		/**
-		 * Current object index in iteration
-		 */
+		/** Current object index in iteration */
 		COUNTER: number;
+
+		/** Ordering field/expression */
+		ORDERBY?: string;
+		/** Limit SQL expression */
+		LIMIT?: string;
+
+		/** Log resulting query */
+		DEBUG_SQL_QUERY?: boolean;
 
 		/**
 		 * Raw object fields if ordered by 'provideRaw'
@@ -541,10 +547,14 @@ namespace DbRecord2 {
 		 * Don't create an object while calling callback
 		 */
 		noObjectCreate?: boolean;
-		/**
-		 * Provide the raw representation of the object
-		 */
+		/** Provide the raw representation of the object */
 		provideRaw?: boolean;
+
+		/** If required to lock records with FOR UPDATE */
+		forUpdate?: boolean;
+
+		whereCond?: string[];
+		whereParam?: DbRecord2.DbField[];
 	}
 
 	/**
