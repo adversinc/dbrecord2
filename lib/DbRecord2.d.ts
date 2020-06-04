@@ -227,6 +227,10 @@ declare namespace DbRecord2 {
         type String = (value?: string) => string;
         type Number = (value?: number) => number;
         type DateTime = (value?: Date) => Date;
+        /** Acts like a string for now but may get extended later */
+        type Enum = (value?: string) => number;
+        /** Acts like a string for now but may be extended later */
+        type Set = (value?: string) => number;
     }
     /**
      * Add value to mysql SET field
