@@ -1,6 +1,5 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
 declare type TransactionCallback = (me: DbRecord2) => Promise<boolean> | Promise<void> | boolean | void;
-declare type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
 interface ChangedFields {
     [key: string]: boolean;
 }
@@ -145,7 +144,7 @@ declare class DbRecord2 {
      *
      * @returns {Number} the number of rows found
      */
-    static forEach(options: DbRecord2.ForEachOptions, cb: ForeachCallback): Promise<number>;
+    static forEach(options: DbRecord2.ForEachOptions, cb: DbRecord2.ForeachCallback): Promise<number>;
     /**
      * Prepares SQL and param arrays for forEach()
      * @param options
@@ -220,6 +219,7 @@ declare namespace DbRecord2 {
         whereCond?: string[];
         whereParam?: DbRecord2.DbField[];
     }
+    type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
     /**
      * Field access function types
      */
