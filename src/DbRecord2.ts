@@ -336,6 +336,8 @@ class DbRecord2 {
 	 * Runs through database objects according the options, and calls the
 	 * callback routine for each.
 	 *
+	 * Callback may return false to stop iterating.
+	 *
 	 * @param {Object} options
 	 * @param {String} options.any_lowercase_field - the field to get added to WHERE
 	 * @param {[String]} options.whereCond - optional WHERE conditions to add
@@ -387,7 +389,8 @@ class DbRecord2 {
 				}
 
 				// Wait for iterator to end
-				await cb(obj, options);
+				const res = await cb(obj, options);
+				if(res === false) { break; }
 			}
 		} else {
 			options.COUNTER = options.TOTAL;
@@ -556,7 +559,7 @@ namespace DbRecord2 {
 		whereParam?: DbRecord2.DbField[];
 	}
 
-	export type ForeachCallback<T> = (item: T, options: DbRecord2.ForEachOptions) => Promise<void>;
+	export type ForeachCallback<T> = (item: T, options: DbRecord2.ForEachOptions) => Promise<boolean>;
 
 	/**
 	 * Field access function types
