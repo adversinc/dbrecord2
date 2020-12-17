@@ -3,7 +3,6 @@ const strcount = require('quickly-count-substrings');
 
 // It actually returns Promise<boolean> but DbRecord requires boolean
 type TransactionCallback = (me: DbRecord2) => Promise<boolean>|Promise<void>|boolean|void;
-type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
 
 interface ChangedFields {
 	[key: string]: boolean;
@@ -350,7 +349,7 @@ class DbRecord2 {
 	 *
 	 * @returns {Number} the number of rows found
 	 */
-	static async forEach(options: DbRecord2.ForEachOptions, cb: ForeachCallback) {
+	static async forEach(options: DbRecord2.ForEachOptions, cb: DbRecord2.ForeachCallback) {
 		const where: string[] = [];
 		const qparam: DbRecord2.DbField[] = [];
 		const sql = this._prepareForEach(options, where, qparam);
@@ -556,6 +555,8 @@ namespace DbRecord2 {
 		whereCond?: string[];
 		whereParam?: DbRecord2.DbField[];
 	}
+
+	export type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
 
 	/**
 	 * Field access function types
