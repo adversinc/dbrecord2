@@ -2,7 +2,7 @@ import DbRecord2 = require("../src/DbRecord2");
 
 class TestRecord extends DbRecord2 {
 	static _table() {
-		return "tests." + TABLE_NAME;
+		return "tests.table";
 	}
 
 	static _locatefield() {
@@ -20,5 +20,5 @@ class TestRecord extends DbRecord2 {
 TestRecord.forEach({
 
 }, async (item) => {
-	tmp.myLocal();
+	item.myLocal();
 })

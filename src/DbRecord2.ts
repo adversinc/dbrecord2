@@ -559,7 +559,7 @@ namespace DbRecord2 {
 		whereParam?: DbRecord2.DbField[];
 	}
 
-	export type ForeachCallback<T> = (item: T, options: DbRecord2.ForEachOptions) => Promise<boolean>;
+	export type ForeachCallback<T> = (item: T, options: DbRecord2.ForEachOptions) => Promise<boolean|void>;
 
 	/**
 	 * Field access function types
