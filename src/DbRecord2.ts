@@ -408,8 +408,6 @@ class DbRecord2 {
 	 */
 	static _prepareForEach(options: DbRecord2.ForEachOptions, where, qparam) {
 		let sql = `SELECT ${this._locatefield()} FROM ${this._table()}`;
-		if(options.forUpdate) { sql += " FOR UPDATE"; }
-
 
 		// WHERE fields
 		Object.keys(options).forEach((k) => {
@@ -446,7 +444,9 @@ class DbRecord2 {
 			sql += " LIMIT " + options.LIMIT;
 		}
 
-		if(options.DEBUG_SQL_QUERY) {
+		if(options.forUpdate) { sql += " FOR UPDATE"; }
+
+		if(options.debugSql) {
 			console.log(sql, qparam);
 		}
 
@@ -536,7 +536,7 @@ namespace DbRecord2 {
 		LIMIT?: string;
 
 		/** Log resulting query */
-		DEBUG_SQL_QUERY?: boolean;
+		debugSql?: boolean;
 
 		/**
 		 * Raw object fields if ordered by 'provideRaw'

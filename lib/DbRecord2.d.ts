@@ -204,7 +204,7 @@ declare namespace DbRecord2 {
         /** Limit SQL expression */
         LIMIT?: string;
         /** Log resulting query */
-        DEBUG_SQL_QUERY?: boolean;
+        debugSql?: boolean;
         /**
          * Raw object fields if ordered by 'provideRaw'
          */
