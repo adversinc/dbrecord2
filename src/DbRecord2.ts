@@ -349,14 +349,14 @@ class DbRecord2 {
 	 *
 	 * @returns {Number} the number of rows found
 	 */
-	static async forEach(options: DbRecord2.ForEachOptions, cb: DbRecord2.ForeachCallback) {
+	static async forEach<T extends DbRecord2>(this: { new(): T }, options: DbRecord2.ForEachOptions, cb: DbRecord2.ForeachCallback<T>) {
 		const where: string[] = [];
 		const qparam: DbRecord2.DbField[] = [];
-		const sql = this._prepareForEach(options, where, qparam);
+		const sql = (this as unknown as typeof DbRecord2)._prepareForEach(options, where, qparam);
 
 		//
 		// Iterate
-		const _dbh = await this._getDbhClassStatic().masterDbh();
+		const _dbh = await (this as unknown as typeof DbRecord2)._getDbhClassStatic().masterDbh();
 
 		/*
 		if(TARGET === "development") {
@@ -374,11 +374,11 @@ class DbRecord2 {
 				options.COUNTER++;
 
 				const o = {};
-				o[this._locatefield()] = row[this._locatefield()];
+				o[(this as unknown as typeof DbRecord2)._locatefield()] = row[(this as unknown as typeof DbRecord2)._locatefield()];
 				let obj = null;
 
 				if(!options.noObjectCreate) {
-					obj = new this(o);
+					obj = new (this as unknown as typeof DbRecord2)(o);
 					await obj.init();
 				}
 
@@ -525,9 +525,9 @@ namespace DbRecord2 {
 
 	export interface ForEachOptions {
 		/** Total objects in iteration */
-		TOTAL: number;
+		TOTAL?: number;
 		/** Current object index in iteration */
-		COUNTER: number;
+		COUNTER?: number;
 
 		/** Ordering field/expression */
 		ORDERBY?: string;
@@ -556,7 +556,7 @@ namespace DbRecord2 {
 		whereParam?: DbRecord2.DbField[];
 	}
 
-	export type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
+	export type ForeachCallback<T> = (item: T, options: DbRecord2.ForEachOptions) => Promise<void>;
 
 	/**
 	 * Field access function types

@@ -144,7 +144,9 @@ declare class DbRecord2 {
      *
      * @returns {Number} the number of rows found
      */
-    static forEach(options: DbRecord2.ForEachOptions, cb: DbRecord2.ForeachCallback): Promise<number>;
+    static forEach<T extends DbRecord2>(this: {
+        new (): T;
+    }, options: DbRecord2.ForEachOptions, cb: DbRecord2.ForeachCallback<T>): Promise<number>;
     /**
      * Prepares SQL and param arrays for forEach()
      * @param options
@@ -195,9 +197,9 @@ declare namespace DbRecord2 {
     }
     interface ForEachOptions {
         /** Total objects in iteration */
-        TOTAL: number;
+        TOTAL?: number;
         /** Current object index in iteration */
-        COUNTER: number;
+        COUNTER?: number;
         /** Ordering field/expression */
         ORDERBY?: string;
         /** Limit SQL expression */
@@ -219,7 +221,7 @@ declare namespace DbRecord2 {
         whereCond?: string[];
         whereParam?: DbRecord2.DbField[];
     }
-    type ForeachCallback = (item: DbRecord2, options: DbRecord2.ForEachOptions) => Promise<void>;
+    type ForeachCallback<T> = (item: T, options: DbRecord2.ForEachOptions) => Promise<void>;
     /**
      * Field access function types
      */
