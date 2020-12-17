@@ -223,7 +223,7 @@ declare namespace DbRecord2 {
         whereCond?: string[];
         whereParam?: DbRecord2.DbField[];
     }
-    type ForeachCallback<T> = (item: T, options: DbRecord2.ForEachOptions) => Promise<boolean>;
+    type ForeachCallback<T> = (item: T, options: DbRecord2.ForEachOptions) => Promise<boolean | void>;
     /**
      * Field access function types
      */
