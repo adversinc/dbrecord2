@@ -16,9 +16,15 @@ class TestRecord extends DbRecord2 {
 	myLocal() {}
 }
 
-// The 'item' type should resolve to "TestRecord" with TS
+// 1. The 'item' type should resolve to "TestRecord" with TS
 TestRecord.forEach({
 
 }, async (item) => {
 	item.myLocal();
 })
+
+// 2. Enum/Set should be extensible
+type T_YN = "Y"|"N";
+
+const a: DbRecord2.Column.Enum = (v: string) => { return v; };
+const a1: DbRecord2.Column.Enum<T_YN> = (v: T_YN) => { return v; };

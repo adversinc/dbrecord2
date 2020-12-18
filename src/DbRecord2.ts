@@ -568,10 +568,10 @@ namespace DbRecord2 {
 		export type String = (value?: string) => string;
 		export type Number = (value?: number) => number;
 		export type DateTime = (value?: Date) => Date;
-		/** Acts like a string for now but may get extended later */
-		export type Enum = (value?: string) => number;
-		/** Acts like a string for now but may be extended later */
-		export type Set = (value?: string) => number;
+		/** Acts like a string by default but can be set to specific string set */
+		export type Enum<T extends string = string> = (value?: T) => T;
+		/** Acts like a string by default but can be set to specific string set */
+		export type Set<T extends string = string> = (value?: T) => T;
 	}
 
 
