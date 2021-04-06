@@ -1,5 +1,5 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
-declare type TransactionCallback = (me: DbRecord2) => Promise<boolean> | Promise<void> | boolean | void;
+declare type TransactionCallback<T extends DbRecord2> = (me: T) => Promise<boolean> | Promise<void> | boolean | void;
 interface ChangedFields {
     [key: string]: boolean;
 }
@@ -164,7 +164,7 @@ declare class DbRecord2 {
      * @param {Function} cb - function to run with a "me" newly created objec
      * @returns {Promise<void>}
      */
-    transactionWithMe<T extends DbRecord2>(this: T, cb: TransactionCallback): Promise<void>;
+    transactionWithMe<T extends DbRecord2>(this: T, cb: TransactionCallback<T>): Promise<void>;
     /**
      * Returns MysqlDatabase class used for this DbRecord class
      * @private
