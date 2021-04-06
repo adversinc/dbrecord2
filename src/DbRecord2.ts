@@ -2,7 +2,7 @@ import MysqlDatabase2 from "./MysqlDatabase2";
 const strcount = require('quickly-count-substrings');
 
 // It actually returns Promise<boolean> but DbRecord requires boolean
-type TransactionCallback = (me: DbRecord2) => Promise<boolean>|Promise<void>|boolean|void;
+type TransactionCallback<T extends DbRecord2> = (me: T) => Promise<boolean>|Promise<void>|boolean|void;
 
 interface ChangedFields {
 	[key: string]: boolean;
@@ -462,7 +462,7 @@ class DbRecord2 {
 	 * @param {Function} cb - function to run with a "me" newly created objec
 	 * @returns {Promise<void>}
 	 */
-	async transactionWithMe<T extends DbRecord2>(this: T, cb: TransactionCallback) {
+	async transactionWithMe<T extends DbRecord2>(this: T, cb: TransactionCallback<T>) {
 		const Class = this.constructor;
 
 		// Make sure we are committed
