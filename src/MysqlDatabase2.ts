@@ -1,6 +1,7 @@
 import lodashMerge from 'lodash/merge';
 import * as mysql from 'mysql';
 import ContextStorage from 'cls-hooked';
+import fs from "fs";
 
 interface MysqlConfig {
 	host: string;
@@ -80,11 +81,14 @@ class MysqlDatabase2 {
 	 */
 	cid: string;
 
-	_config: MysqlConfig;
-	_db: DbConnection = null;
-	_createdFromPool: boolean = false;
+	private _config: MysqlConfig;
+	private _db: DbConnection = null;
+	private _createdFromPool: boolean = false;
 
-	_transacted: number = 0;
+	private _transacted: number = 0;
+
+	// Set to true to log all transactions to file
+	public static debugLogTransactions: boolean = false;
 
 	/**
 	 * config:
@@ -231,10 +235,19 @@ class MysqlDatabase2 {
 		}
 
 		// Only execute START TRANSACTION for the first-level trx
+		const threadId = trxDb._db.threadId;
 		if(trxDb._transacted++ === 0) {
+			if(MysqlDatabase2.debugLogTransactions) {
+				const stackTrace = Error().stack.replace("Error:", "Stack trace:");
+				MysqlDatabase2.logTransaction(threadId, `\ntransaction starting:\n${stackTrace}`);
+			}
+
 			await trxDb.queryAsync("START TRANSACTION  /* from trx */");
 			this._debug("START TRANSACTION in dbh", trxDb.cid);
 		}
+
+		MysqlDatabase2.logTransaction(threadId, `transaction level: ${trxDb._transacted}`);
+
 		const trxPromise = new Promise((resolve, reject) => {
 			// Execute transaction and create a running context for it
 			trxContext.run(async() => {
@@ -247,15 +260,23 @@ class MysqlDatabase2 {
 				} catch(ex) {
 					this._debug("Internal transaction exception:", ex);
 					await trxDb._rollback();
+
+					MysqlDatabase2.logTransaction(threadId, `transaction rolled back in exception (level: ${trxDb._transacted})`);
 					reject(ex);
 				}
 
 				if(res === false) {
 					await trxDb._rollback();
+					MysqlDatabase2.logTransaction(threadId, `transaction rolled back (level: ${trxDb._transacted})`);
 					this._debug("did the rollback, dbh", this.cid);
 				} else {
 					await trxDb._commit();
+					MysqlDatabase2.logTransaction(threadId, `transaction commit (level: ${trxDb._transacted})`);
 					this._debug("did the commit");
+				}
+
+				if(trxDb._transacted ==  0) {
+					MysqlDatabase2.logTransaction(threadId, `TRANSACTION CLOSED\n`);
 				}
 
 				resolve();
@@ -272,6 +293,17 @@ class MysqlDatabase2 {
 		}
 
 		return trxDb;
+	}
+
+	static logTransaction(threadId: number, msg: string) {
+		if(MysqlDatabase2.debugLogTransactions) {
+			let newLine ="";
+			if(msg.startsWith("\n")) {
+				newLine = "\n"
+				msg = msg.substr(1);
+			}
+			fs.appendFileSync(`/tmp/mysql-trx/${threadId}`, `[${new Date().toISOString()}] ${msg}\n`);
+		}
 	}
 
 	/**

@@ -19,9 +19,6 @@ interface QueryResult extends Array<TableRow> {
     insertId: number;
     forEach: ((cb: object) => void);
 }
-interface DbConnection extends mysql.Connection {
-    _seq?: number;
-}
 /**
  * The database processing class.
  *
@@ -43,10 +40,11 @@ declare class MysqlDatabase2 {
      * Generated connection id (_db.threadId also can be used);
      */
     cid: string;
-    _config: MysqlConfig;
-    _db: DbConnection;
-    _createdFromPool: boolean;
-    _transacted: number;
+    private _config;
+    private _db;
+    private _createdFromPool;
+    private _transacted;
+    static debugLogTransactions: boolean;
     /**
      * config:
      * 	user, password, host - regular mysql connection settings
@@ -84,6 +82,7 @@ declare class MysqlDatabase2 {
      */
     execTransaction(cb: MysqlDatabase2.TransactionCallback): Promise<any>;
     execTransactionAsync(cb: MysqlDatabase2.TransactionCallback): Promise<any>;
+    static logTransaction(threadId: number, msg: string): void;
     /**
      * Commits the current database transaction
      */

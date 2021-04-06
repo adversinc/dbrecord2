@@ -19,6 +19,8 @@ const sleep = function(ms) {
 	});
 };
 
+MysqlDatabase.debugLogTransactions = true;
+
 // Tests
 describe('DbRecord transactions pool', function() {
 	let dbh = null;
