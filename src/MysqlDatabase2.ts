@@ -239,7 +239,7 @@ class MysqlDatabase2 {
 		if(trxDb._transacted++ === 0) {
 			if(MysqlDatabase2.debugLogTransactions) {
 				const stackTrace = Error().stack.replace("Error:", "Stack trace:");
-				MysqlDatabase2.logTransaction(threadId, `\ntransaction starting:\n${stackTrace}`);
+				MysqlDatabase2.logTransaction(threadId, `\ntransaction starting:\n${stackTrace}\n${callStack}`);
 			}
 
 			await trxDb.queryAsync("START TRANSACTION  /* from trx */");
