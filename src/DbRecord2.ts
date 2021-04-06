@@ -470,6 +470,13 @@ class DbRecord2 {
 			throw new Error(`${Class.name}: Object has uncommitted changes before transaction`);
 		}
 
+		// Prepare our call stack if debugLogTransactions is defined. Otherwise
+		// call stack is being destroyed by await
+		let callStack = "";
+		if(MysqlDatabase2.debugLogTransactions) {
+			callStack = Error().stack.replace("Error:", "Stack trace:");
+		}
+
 		const dbh = await (Class as any).masterDbh();
 		await dbh.execTransactionAsync(async () => {
 			const params = {};
@@ -478,7 +485,7 @@ class DbRecord2 {
 			await me.init();
 
 			return await cb(me);
-		});
+		}, callStack);
 
 		// Re-read our object after the transaction
 		await this._read(this[this._locateField]());

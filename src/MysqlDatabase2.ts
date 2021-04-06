@@ -211,7 +211,7 @@ class MysqlDatabase2 {
 		return this.execTransactionAsync(cb);
 	}
 
-	async execTransactionAsync(cb: MysqlDatabase2.TransactionCallback) {
+	async execTransactionAsync(cb: MysqlDatabase2.TransactionCallback, callStack?: string) {
 		// TODO GG: port the nested trasactions code here
 		let trxDb = null;
 

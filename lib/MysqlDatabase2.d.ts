@@ -81,7 +81,7 @@ declare class MysqlDatabase2 {
      * 	transaction should be rolled back
      */
     execTransaction(cb: MysqlDatabase2.TransactionCallback): Promise<any>;
-    execTransactionAsync(cb: MysqlDatabase2.TransactionCallback): Promise<any>;
+    execTransactionAsync(cb: MysqlDatabase2.TransactionCallback, callStack?: string): Promise<any>;
     static logTransaction(threadId: number, msg: string): void;
     /**
      * Commits the current database transaction
