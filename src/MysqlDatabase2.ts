@@ -211,7 +211,7 @@ class MysqlDatabase2 {
 		return this.execTransactionAsync(cb);
 	}
 
-	async execTransactionAsync(cb: MysqlDatabase2.TransactionCallback, callStack?: string) {
+	async execTransactionAsync(cb: MysqlDatabase2.TransactionCallback) {
 		// TODO GG: port the nested trasactions code here
 		let trxDb = null;
 
@@ -240,7 +240,7 @@ class MysqlDatabase2 {
 		if(trxDb._transacted++ === 0) {
 			if(MysqlDatabase2.debugLogTransactions) {
 				const stackTrace = Error().stack.replace("Error:", "Stack trace:");
-				MysqlDatabase2.logTransaction(threadId, `\ntransaction starting:\n${stackTrace}\n${callStack}`);
+				MysqlDatabase2.logTransaction(threadId, `\ntransaction starting:\n${stackTrace}`);
 			}
 
 			await trxDb.queryAsync("START TRANSACTION  /* from trx */");
