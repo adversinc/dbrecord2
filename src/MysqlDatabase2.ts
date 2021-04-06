@@ -236,6 +236,7 @@ class MysqlDatabase2 {
 
 		// Only execute START TRANSACTION for the first-level trx
 		const threadId = trxDb._db.threadId;
+		const trxStart = new Date().getTime();
 		if(trxDb._transacted++ === 0) {
 			if(MysqlDatabase2.debugLogTransactions) {
 				const stackTrace = Error().stack.replace("Error:", "Stack trace:");
@@ -261,8 +262,14 @@ class MysqlDatabase2 {
 					this._debug("Internal transaction exception:", ex);
 					await trxDb._rollback();
 
+					let time = new Date().getTime() - trxStart;
 					MysqlDatabase2.logTransaction(threadId, `transaction rolled back in exception (level: ${trxDb._transacted})`);
+					if(trxDb._transacted ==  0) {
+						MysqlDatabase2.logTransaction(threadId, `TRANSACTION CLOSED WITH EXCEPTION (${time}ms)\n`);
+					}
+
 					reject(ex);
+					return;
 				}
 
 				if(res === false) {
@@ -275,8 +282,9 @@ class MysqlDatabase2 {
 					this._debug("did the commit");
 				}
 
+				let time = new Date().getTime() - trxStart;
 				if(trxDb._transacted ==  0) {
-					MysqlDatabase2.logTransaction(threadId, `TRANSACTION CLOSED\n`);
+					MysqlDatabase2.logTransaction(threadId, `TRANSACTION CLOSED (${time}ms)\n`);
 				}
 
 				resolve();
