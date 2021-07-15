@@ -349,11 +349,15 @@ class MysqlDatabase2 {
 	}
 
 	destroy() {
+		this._debug("Stopping mysql", this.cid);
 		// Connections created from pool are to be released, direct connections destroyed
 		if(this._createdFromPool) {
 			if(this._db != null) { (this._db as mysql.PoolConnection).release(); }
 		} else {
-			this._db.destroy();
+			//this._db.destroy();
+			this._db.end(err => {
+				this._debug("mysql ended", err);
+			});
 		}
 
 		this.removeHandlers();

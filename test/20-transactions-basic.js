@@ -154,7 +154,7 @@ describe('DbRecord2 transactionWithMe', function() {
 		await TestRecord.createMockTable(dbh);
 	});
 
-	after(() => {
+	after(async () => {
 		MysqlDatabase.masterDbhDestroy();
 	});
 
