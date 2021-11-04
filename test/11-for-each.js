@@ -219,6 +219,35 @@ describe('DbRecord2 record iteration', function() {
 		assert.equal(doubleInside, false, "forEach waits for iterator to end");
 	});
 
+	it('should wait for forEach', async function() {
+		// Create records
+		const source = [];
+		for(let i = 0; i < 1; i++) {
+			const obj = new TestRecord();
+			await obj.init();
+
+			obj.name(this.test.fullTitle() + "#" + i);
+			obj.field2(i);
+			await obj.commit();
+		}
+
+		// Go through all records, and make a delay so FIRST item has a LONGEST
+		// delay
+		let iteratorCompleted = false;
+		const start = new Date();
+
+		const num = await TestRecord.forEach({
+		}, async (itm, options) => {
+			await sleep(2000);
+			iteratorCompleted = true;
+		});
+
+		assert.equal(num, 1, "correct amount of records processed");
+		assert.equal(iteratorCompleted, true, "forEach iterator completed");
+		assert.equal(new Date().getTime() - start.getTime() >= 2000,
+			true, "forEach actually slept");
+	});
+
 
 	it('should accept additional where conditions', async function() {
 		// Create records

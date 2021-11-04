@@ -305,12 +305,15 @@ class MysqlDatabase2 {
 
 	static logTransaction(threadId: number, msg: string) {
 		if(MysqlDatabase2.debugLogTransactions) {
-			let newLine ="";
+			let newLine = "";
 			if(msg.startsWith("\n")) {
 				newLine = "\n"
 				msg = msg.substr(1);
 			}
-			fs.appendFileSync(`/tmp/mysql-trx/${threadId}`, `[${new Date().toISOString()}] ${msg}\n`);
+			try {
+				fs.appendFileSync(`/tmp/mysql-trx/${threadId}`, `[${new Date().toISOString()}] ${msg}\n`);
+			} catch(ex) {
+			}
 		}
 	}
 
