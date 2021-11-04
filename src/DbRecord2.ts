@@ -413,7 +413,7 @@ class DbRecord2 {
 
 		// WHERE fields
 		Object.keys(options).forEach((k) => {
-			if(k.match(/[^a-z0-9._, ()*-]/)) { return; }
+			if(k.match(/[^a-z0-9._]/)) { return; }
 
 			where.push(`${k}=?`);
 			qparam.push(options[k]);
@@ -437,7 +437,7 @@ class DbRecord2 {
 
 
 		// ORDER BY
-		if(options.ORDERBY && !options.ORDERBY.match(/[^a-zA-Z0-9 ><-]/)) {
+		if(options.ORDERBY && !options.ORDERBY.match(/[^a-zA-Z0-9 ><,()*-]/)) {
 			sql += " ORDER BY " + options.ORDERBY;
 		}
 
