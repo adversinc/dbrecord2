@@ -437,7 +437,7 @@ class DbRecord2 {
 
 
 		// ORDER BY
-		if(options.ORDERBY && !options.ORDERBY.match(/[^a-zA-Z0-9 ><,()*-]/)) {
+		if(options.ORDERBY && !options.ORDERBY.match(/[^a-zA-Z0-9 ><,()*_-]/)) {
 			sql += " ORDER BY " + options.ORDERBY;
 		}
 
