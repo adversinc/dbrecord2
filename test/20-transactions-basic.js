@@ -143,7 +143,7 @@ describe('DbRecord2 transactionWithMe', function() {
 	let dbh = null;
 	before(async function() {
 		const c = lodashMerge({}, config.get("mysql"));
-		c.reuseConnection = true;
+		//c.reuseConnection = true;
 		c.logger = mlog;
 
 		MysqlDatabase.masterConfig(c);
@@ -178,6 +178,32 @@ describe('DbRecord2 transactionWithMe', function() {
 
 		assert.equal(originalName, this.test.fullTitle());
 		assert.equal(obj.name(), "Changed to new");
+	});
+
+	//
+	//
+	it('should have different cid in trx', async function() {
+		const obj = new TestRecord();
+		await obj.init();
+		obj.name(this.test.fullTitle());
+		await obj.commit();
+
+		let originalName = "was not called at all";
+
+		const cid1 = obj._dbh.cid;
+		let cid2 = "";
+		await obj.transactionWithMe(async(obj) => {
+			console.log("In TRX:", obj.name());
+			originalName = obj.name();
+
+			obj.name("Changed to new");
+
+			cid2 = obj._dbh.cid;
+
+			await obj.commit();
+		});
+
+		assert.notStrictEqual(cid1, cid2,"Trx got different cid");
 	});
 
 	it('should rollback trx if required', async function() {
