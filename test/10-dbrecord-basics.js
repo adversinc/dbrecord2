@@ -55,6 +55,9 @@ describe('DbRecord2 basic ops', function() {
 		obj.name(this.test.fullTitle());
 		await obj.commit();
 
+		obj.managed_field(`with ${id}`);
+		await obj.commit();
+
 		// Checks
 		const TABLE_NAME  = obj._tableName;
 		const row = await dbh.queryAsync(`SELECT * FROM ${TABLE_NAME}`);
@@ -63,7 +66,7 @@ describe('DbRecord2 basic ops', function() {
 			name: this.test.fullTitle(),
 			field2: null,
 			field3: null,
-			managed_field: null
+			managed_field: `with ${id}`
 		} ]);
 	});
 
