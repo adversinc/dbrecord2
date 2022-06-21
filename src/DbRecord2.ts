@@ -27,6 +27,9 @@ class DbRecord2 {
 	_locateField: string;
 	_keysList: string[];
 
+	// If this object is new, does not exist in DB
+	_dbObjectExists: boolean = false;
+
 	static _table(): string { throw "DbRecord can't be created directly"; }
 	static _locatefield(): string { throw "DbRecord can't be created directly"; }
 	static _keys(): string[] { return []; }
@@ -48,6 +51,10 @@ class DbRecord2 {
 
 		this._values = Object.assign({}, values);
 		this._initOptions = Object.assign({}, initOptions);
+
+		if(Object.keys(this._values).length) {
+			this._dbObjectExists = true;
+		}
 	}
 
 	/**
@@ -116,6 +123,11 @@ class DbRecord2 {
 
 		if(Object.keys(this._changes).length === 0) {
 			return;
+		}
+
+		// For newly created records we force INSERT behavior
+		if(!this._dbObjectExists) {
+			options.behavior = "INSERT";
 		}
 
 		if(this._raw[this._locateField] !== undefined && options.behavior !== "INSERT") {

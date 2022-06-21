@@ -46,6 +46,29 @@ describe('DbRecord2 basic ops', function() {
 
 	//
 	//
+	it('should create a row with predefined locate id', async function() {
+		const id = Math.round(10 + Math.random()*1000);
+
+		const obj = new TestRecord();
+		await obj.init();
+		obj.id(id);
+		obj.name(this.test.fullTitle());
+		await obj.commit();
+
+		// Checks
+		const TABLE_NAME  = obj._tableName;
+		const row = await dbh.queryAsync(`SELECT * FROM ${TABLE_NAME}`);
+		assert.deepEqual(row, [ {
+			id: id,
+			name: this.test.fullTitle(),
+			field2: null,
+			field3: null,
+			managed_field: null
+		} ]);
+	});
+
+	//
+	//
 	it('should create a row with newRecord', async function() {
 		const obj = await TestRecord.newRecord({
 			name: this.test.fullTitle()

@@ -19,6 +19,7 @@ declare class DbRecord2 {
     _tableName: string;
     _locateField: string;
     _keysList: string[];
+    _dbObjectExists: boolean;
     static _table(): string;
     static _locatefield(): string;
     static _keys(): string[];
