@@ -279,7 +279,7 @@ class MysqlDatabase2 {
 				} else {
 					await trxDb._commit();
 					MysqlDatabase2.logTransaction(threadId, `transaction commit (level: ${trxDb._transacted})`);
-					this._debug("did the commit");
+					this._debug("did the commit in execTrxAsync");
 				}
 
 				let time = new Date().getTime() - trxStart;

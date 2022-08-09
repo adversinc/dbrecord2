@@ -129,6 +129,7 @@ class DbRecord2 {
 		if(!this._dbObjectExists) {
 			options.behavior = "INSERT";
 		}
+		this._dbh._debug(`Commit behavior: ${options.behavior}`);
 
 		if(this._raw[this._locateField] !== undefined && options.behavior !== "INSERT") {
 			sql = "UPDATE ";
@@ -163,6 +164,8 @@ class DbRecord2 {
 				throw new Error(`${this.constructor.name}: Object has to be re-created in transaction`);
 			}
 		}
+
+		//this._dbh._debug(`Commit SQL: ${sql} / ${JSON.stringify(values)}`);
 
 		const res = await this._dbh.queryAsync(sql, values);
 

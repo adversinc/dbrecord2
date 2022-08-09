@@ -141,7 +141,7 @@ describe('DbRecord transactions', function() {
 // Tests
 describe('DbRecord2 transactionWithMe', function() {
 	let dbh = null;
-	before(async function() {
+	before(async function () {
 		const c = lodashMerge({}, config.get("mysql"));
 		//c.reuseConnection = true;
 		c.logger = mlog;
@@ -150,7 +150,7 @@ describe('DbRecord2 transactionWithMe', function() {
 		dbh = await MysqlDatabase.masterDbh();
 	});
 
-	beforeEach(async function() {
+	beforeEach(async function () {
 		await TestRecord.createMockTable(dbh);
 	});
 
@@ -160,7 +160,7 @@ describe('DbRecord2 transactionWithMe', function() {
 
 	//
 	//
-	it('should work inside trx', async function() {
+	it('should work inside trx', async function () {
 		const obj = new TestRecord();
 		await obj.init();
 		obj.name(this.test.fullTitle());
@@ -168,7 +168,7 @@ describe('DbRecord2 transactionWithMe', function() {
 
 		let originalName = "was not called at all";
 
-		await obj.transactionWithMe(async(obj) => {
+		await obj.transactionWithMe(async (obj) => {
 			console.log("In TRX:", obj.name());
 			originalName = obj.name();
 
@@ -182,7 +182,7 @@ describe('DbRecord2 transactionWithMe', function() {
 
 	//
 	//
-	it('should have different cid in trx', async function() {
+	it('should have different cid in trx', async function () {
 		const obj = new TestRecord();
 		await obj.init();
 		obj.name(this.test.fullTitle());
@@ -192,7 +192,7 @@ describe('DbRecord2 transactionWithMe', function() {
 
 		const cid1 = obj._dbh.cid;
 		let cid2 = "";
-		await obj.transactionWithMe(async(obj) => {
+		await obj.transactionWithMe(async (obj) => {
 			console.log("In TRX:", obj.name());
 			originalName = obj.name();
 
@@ -203,10 +203,10 @@ describe('DbRecord2 transactionWithMe', function() {
 			await obj.commit();
 		});
 
-		assert.notStrictEqual(cid1, cid2,"Trx got different cid");
+		assert.notStrictEqual(cid1, cid2, "Trx got different cid");
 	});
 
-	it('should rollback trx if required', async function() {
+	it('should rollback trx if required', async function () {
 		const obj = new TestRecord();
 		await obj.init();
 		obj.name(this.test.fullTitle());
@@ -214,7 +214,7 @@ describe('DbRecord2 transactionWithMe', function() {
 
 		let originalName = "was not called at all";
 
-		await obj.transactionWithMe(async(obj) => {
+		await obj.transactionWithMe(async (obj) => {
 			console.log("In TRX:", obj.name());
 			originalName = obj.name();
 
@@ -226,5 +226,53 @@ describe('DbRecord2 transactionWithMe', function() {
 
 		assert.equal(originalName, this.test.fullTitle());
 		assert.equal(obj.name(), this.test.fullTitle());
+	});
+
+	it('should catch trx exceptions', async function () {
+		const obj = new TestRecord();
+		await obj.init();
+		obj.name(this.test.fullTitle());
+		await obj.commit();
+
+		const id1 = obj.id();
+
+		let exceptionMessage = "";
+
+		try {
+			await obj.transactionWithMe(async (obj) => {
+				throw new Error("Internal trx exception");
+			});
+		} catch(ex) {
+			exceptionMessage = ex.message;
+		}
+
+		assert.strictEqual(exceptionMessage, "Internal trx exception");
+	});
+
+
+	it('should catch trx mysql exception', async function () {
+		const obj = new TestRecord();
+		await obj.init();
+		obj.name(this.test.fullTitle());
+		await obj.commit();
+
+		const id1 = obj.id();
+		mlog.log(`First record id: ${id1}`);
+
+		let exceptionMessage = "";
+
+		try {
+			await obj.transactionWithMe(async (obj) => {
+				const obj2 = new TestRecord();
+				await obj2.init();
+				obj2.id(id1);
+				obj2.name("Second record");
+				await obj2.commit();
+			});
+		} catch(ex) {
+			exceptionMessage = ex.message;
+		}
+
+		assert.ok(exceptionMessage.match(/^ER_DUP_ENTRY:/), "ER_DUP_ENTRY fired inside trx");
 	});
 });
