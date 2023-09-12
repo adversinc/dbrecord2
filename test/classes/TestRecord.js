@@ -13,8 +13,8 @@ class TestRecord extends DbRecord2 {
 	/**
 	 * Creates record instance
 	 */
-	constructor(options = {}) {
-		super(options);
+	constructor(values = {}, options = {}) {
+		super(values, options);
 
 		this._managedCalled = false;
 	}

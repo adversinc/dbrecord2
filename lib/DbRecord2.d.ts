@@ -1,5 +1,5 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
-declare type TransactionCallback<T extends DbRecord2> = (me: T) => Promise<boolean> | Promise<void> | boolean | void;
+type TransactionCallback<T extends DbRecord2> = (me: T) => Promise<boolean> | Promise<void> | boolean | void;
 interface ChangedFields {
     [key: string]: boolean;
 }
@@ -109,7 +109,7 @@ declare class DbRecord2 {
      * @param value
      * @private
      */
-    _accessField(field: string, value: DbRecord2.DbField): string | number | Date;
+    _accessField(field: string, value: DbRecord2.DbField): DbRecord2.DbField;
     /**
      * Creates a function within this class to get/set the certain field
      * @param field
@@ -188,6 +188,7 @@ declare namespace DbRecord2 {
     interface InitializerOptions {
         dbh?: MysqlDatabase2;
         forUpdate?: boolean;
+        queryComment?: string;
     }
     /**
      * Custom options to initialize record
@@ -209,6 +210,8 @@ declare namespace DbRecord2 {
         LIMIT?: string;
         /** Log resulting query */
         debugSql?: boolean;
+        /** A commend to add to the query */
+        queryComment?: string;
         /**
          * Raw object fields if ordered by 'provideRaw'
          */

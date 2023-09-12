@@ -22,7 +22,7 @@ const sleep = function(ms) {
 MysqlDatabase.debugLogTransactions = true;
 
 // Tests
-describe('DbRecord transactions pool', function() {
+describe('DbRecord2 transactions pool', function() {
 	let dbh = null;
 
 	before(async function() {

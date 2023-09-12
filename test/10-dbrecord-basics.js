@@ -44,6 +44,44 @@ describe('DbRecord2 basic ops', function() {
 		} ]);
 	});
 
+	it('should create a row with sql comment', async function() {
+		const obj = new TestRecord({}, {
+			queryComment: "Test comment",
+		});
+
+		const dbh = await obj._getDbhClass().masterDbh();
+		const oldQuery = dbh.queryAsync;
+		let allQueriesHasComment = false;
+		dbh.queryAsync = async function() {
+			const hasComment = arguments[0].includes("/* Test comment */")
+			if(!hasComment) {
+				console.warn(`query without comment: ${arguments[0]}`);
+			}
+
+			allQueriesHasComment ||= hasComment;
+			return oldQuery.apply(this, arguments);
+		};
+
+		await obj.init();
+		obj.name(this.test.fullTitle());
+		await obj.commit();
+
+		dbh.queryAsync = oldQuery;
+
+		// Checks
+		const TABLE_NAME  = obj._tableName;
+		const row = await dbh.queryAsync(`SELECT * FROM ${TABLE_NAME}`);
+		assert.deepEqual(row, [ {
+			id: 1,
+			name: this.test.fullTitle(),
+			field2: null,
+			field3: null,
+			managed_field: null
+		} ]);
+
+		assert.ok(allQueriesHasComment, "sql query contains comment");
+	});
+
 	//
 	//
 	it('should create a row with predefined locate id', async function() {

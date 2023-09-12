@@ -106,7 +106,7 @@ class MysqlDatabase2 {
 	}
 
 	connect() {
-		return new Promise((resolve, reject) => {
+		return new Promise<void>((resolve, reject) => {
 			if(connectionPool) {
 				connectionPool.getConnection((err, dbh) => {
 					// console.log("connection taken from pool");
@@ -249,7 +249,7 @@ class MysqlDatabase2 {
 
 		MysqlDatabase2.logTransaction(threadId, `transaction level: ${trxDb._transacted}`);
 
-		const trxPromise = new Promise((resolve, reject) => {
+		const trxPromise = new Promise<void>((resolve, reject) => {
 			// Execute transaction and create a running context for it
 			trxContext.run(async() => {
 				trxContext.set("dbh", trxDb);

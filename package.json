@@ -5,7 +5,6 @@
   "main": "lib/DbRecord2.js",
   "types": "./lib/DbRecord2.d.ts",
   "scripts": {
-    "build-devel2": "babel -d lib/ src/  --presets=./babel/babel-preset-conditional-devel",
     "build": "tsc --project tsconfig.json",
     "prepare": "npm run build",
     "test": "npm run build && mocha",
@@ -32,26 +31,21 @@
     "url": "https://github.com/adversinc/dbrecord/issues"
   },
   "homepage": "https://github.com/adversinc/dbrecord#readme",
-  "devDependencies": {
-    "@babel/cli": "^7.8.4",
-    "@babel/core": "^7.8.4",
-    "@babel/preset-env": "^7.8.4",
-    "assert": "^2.0.0",
-    "babel-plugin-add-module-exports": "^1.0.2",
-    "babel-plugin-conditional-compile": "^0.0.5",
-    "config": "^3.2.5",
-    "mocha": "^7.0.1",
-    "mocha-logger": "^1.0.6",
-    "nyc": "^15.0.0",
-    "promise-mysql": "^4.1.2",
-    "source-map-support": "^0.5.16",
-    "typescript": "^3.7.5"
-  },
   "dependencies": {
     "cls-hooked": "^4.2.2",
     "continuation-local-storage": "^3.2.1",
     "lodash": "^4.17.15",
     "mysql": "^2.18.1",
     "quickly-count-substrings": "^1.0.0"
+  },
+  "devDependencies": {
+    "assert": "^2.0.0",
+    "config": "^3.2.5",
+    "mocha": "^7.0.1",
+    "mocha-logger": "^1.0.6",
+    "nyc": "^15.1.0",
+    "promise-mysql": "^4.1.2",
+    "source-map-support": "^0.5.16",
+    "typescript": "^5.2.2"
   }
 }

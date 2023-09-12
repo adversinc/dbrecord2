@@ -154,6 +154,10 @@ class DbRecord2 {
 			values.push(this._raw[this._locateField]);
 		}
 
+		if(this._initOptions.queryComment) {
+			sql += ` /* ${this._initOptions.queryComment} */`;
+		}
+
 		// Compare our dbh.cid and current transaction dbh
 		const trxDbh = this._getDbhClass().masterDbhRO();
 
@@ -241,8 +245,9 @@ class DbRecord2 {
 	async _read(locateValue: MysqlDatabase2.FieldValue, byKey: string = undefined) {
 		let field = byKey || this._locateField;
 		const forUpdate = this._initOptions.forUpdate? "FOR UPDATE": "";
+		const comment = this._initOptions.queryComment? ` /* ${this._initOptions.queryComment} */`: "";
 
-		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${field}=? LIMIT 1 ${forUpdate}`,
+		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${field}=? LIMIT 1 ${forUpdate}${comment}`,
 			[locateValue]);
 		return this._createFromRows(rows);
 	}
@@ -257,8 +262,9 @@ class DbRecord2 {
 	async _readByKey(keys, values) {
 		const fields = keys.join("=? AND ") + "=?";
 		const forUpdate = this._initOptions.forUpdate? "FOR UPDATE": "";
+		const comment = this._initOptions.queryComment? ` /* ${this._initOptions.queryComment} */`: "";
 
-		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${fields} LIMIT 1 ${forUpdate}`,
+		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${fields} LIMIT 1 ${forUpdate}${comment}`,
 			values);
 		return this._createFromRows(rows);
 	}
@@ -288,7 +294,9 @@ class DbRecord2 {
 	 * @private
 	 */
 	async _initEmpty() {
-		const rows = await this._dbh.queryAsync(`DESCRIBE ${this._tableName}`);
+		const comment = this._initOptions.queryComment? ` /* ${this._initOptions.queryComment} */`: "";
+		//console.log(`t: ${JSON.stringify(this._initOptions)}, ${comment}`);
+		const rows = await this._dbh.queryAsync(`DESCRIBE ${this._tableName}${comment}`);
 		rows.forEach((field) => { this._createAccessMethod(field.Field); });
 	}
 
@@ -332,7 +340,8 @@ class DbRecord2 {
 	 * are being performed, they are up to caller.
 	 */
 	async deleteRecord() {
-		await this._dbh.queryAsync(`DELETE FROM ${this._tableName} WHERE ${this._locateField} = ?`,
+		const comment = this._initOptions.queryComment? ` /* ${this._initOptions.queryComment} */`: "";
+		await this._dbh.queryAsync(`DELETE FROM ${this._tableName} WHERE ${this._locateField} = ?${comment}`,
 			[ this[this._locateField]() ]);
 	}
 
@@ -464,6 +473,10 @@ class DbRecord2 {
 
 		if(options.forUpdate) { sql += " FOR UPDATE"; }
 
+		if(options.queryComment) {
+			sql += ` /* ${options.queryComment} */`;
+		}
+
 		if(options.debugSql) {
 			console.log(sql, qparam);
 		}
@@ -528,6 +541,8 @@ namespace DbRecord2 {
 	export interface InitializerOptions {
 		dbh?: MysqlDatabase2;
 		forUpdate?: boolean;
+		// A comment to add to the query
+		queryComment?: string;
 	}
 
 	/**
@@ -555,6 +570,9 @@ namespace DbRecord2 {
 
 		/** Log resulting query */
 		debugSql?: boolean;
+
+		/** A commend to add to the query */
+		queryComment?: string;
 
 		/**
 		 * Raw object fields if ordered by 'provideRaw'

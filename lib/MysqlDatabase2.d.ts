@@ -53,7 +53,7 @@ declare class MysqlDatabase2 {
      * @param config
      */
     constructor(config: MysqlConfig);
-    connect(): Promise<unknown>;
+    connect(): Promise<void>;
     disconnect(): void;
     closeAndExit(): void;
     query(query: string, values?: MysqlDatabase2.FieldValue[], cb?: mysql.queryCallback): mysql.Query;
