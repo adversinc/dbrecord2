@@ -6,6 +6,10 @@ in to reading and write data, modify fields and so on.
 
 Important: the code has to run within an async function.
 
+# Breaking changes
+
+Since version 6 DbRecord2 is pure-typescript, no 'lib' for javascript is provided.
+
 # Usage
 
 ## Initialization

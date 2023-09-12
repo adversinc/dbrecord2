@@ -656,4 +656,4 @@ function commaSort(a,b) {
 	return ca>cb? -1 : 1;
 }
 
-export = DbRecord2;
+export default DbRecord2;

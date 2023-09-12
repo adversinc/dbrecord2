@@ -2,10 +2,10 @@
   "name": "advers-dbrecord2",
   "version": "4.4.1",
   "description": "The MySQL active record base class, async-based",
-  "main": "lib/DbRecord2.js",
-  "types": "./lib/DbRecord2.d.ts",
+  "main": "src/DbRecord2.js",
   "scripts": {
-    "build": "tsc --project tsconfig.json",
+    "build-old": "tsc --project tsconfig.json",
+    "build": "echo Pure TS, no build required",
     "prepare": "npm run build",
     "test": "npm run build && mocha",
     "publish": "yarn run build"
@@ -41,11 +41,12 @@
   "devDependencies": {
     "assert": "^2.0.0",
     "config": "^3.2.5",
-    "mocha": "^7.0.1",
-    "mocha-logger": "^1.0.6",
+    "mocha": "^10.2.0",
+    "mocha-logger": "^1.0.8",
     "nyc": "^15.1.0",
     "promise-mysql": "^4.1.2",
     "source-map-support": "^0.5.16",
+    "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   }
 }

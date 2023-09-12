@@ -148,12 +148,20 @@ class MysqlDatabase2 {
 	}
 
 
-	disconnect() {
+	disconnect(): Promise<void> {
 		//if(TARGET == "development") {
 		//	console.log(`${this._db.threadId}: closing mysql threadId`);
 		//}
 
-		this._db.end();
+		return new Promise<void>((resolve, reject) => {
+			this._db.end((err) => {
+				if(err) { reject(err); }
+
+				masterDbh = null;
+
+				resolve();
+			});
+		});
 	}
 
 	closeAndExit() {
@@ -212,7 +220,7 @@ class MysqlDatabase2 {
 	}
 
 	async execTransactionAsync(cb: MysqlDatabase2.TransactionCallback) {
-		// TODO GG: port the nested trasactions code here
+		// TODO GG: port the nested transactions code here
 		let trxDb = null;
 
 		// Set _config.reuseConnection=true to debug transaction run on the same connection
@@ -293,11 +301,13 @@ class MysqlDatabase2 {
 
 		// Wait for transaction user function to finish
 		// (trxContext.run does not support asyncs thus exists immediately)
-		await trxPromise;
-
-		// If we created a new connection, destroy it
-		if(trxDb != this) {
-			trxDb.destroy();
+		try {
+			await trxPromise;
+		} finally {
+			// If we created a new connection, destroy it
+			if(trxDb != this) {
+				trxDb.destroy();
+			}
 		}
 
 		return trxDb;
@@ -346,7 +356,9 @@ class MysqlDatabase2 {
 			this._transacted--;
 
 			if(this._transacted === 0) {
+				this._debug(`Before actual rollback`);
 				await this.queryAsync("ROLLBACK");
+				this._debug(`After actual rollback`);
 			}
 		}
 	}
@@ -405,6 +417,7 @@ class MysqlDatabase2 {
 
 			// If no global dbh exist, create it
 			if(!masterDbh) {
+				console.log("Creating masterDbh");
 				const opt = Object.assign({}, masterConfig, options);
 				masterDbh = new this(opt);
 
@@ -413,6 +426,7 @@ class MysqlDatabase2 {
 					.then((r) => { resolve(masterDbh); })
 					.catch((err) => { reject(err); });
 			} else {
+				//console.log("Not creating masterDbh");
 				resolve(masterDbh);
 			}
 		});
@@ -445,7 +459,7 @@ class MysqlDatabase2 {
 	 * 	connectionLimit - the size of the connection pool. Pool is used only if poolSize > 0
 	 * @param config
 	 */
-	static setupPool(config) {
+	static setupPool(config): void {
 		this.masterConfig(config);
 		connectionPool = mysql.createPool(config);
 
