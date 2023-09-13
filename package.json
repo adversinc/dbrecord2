@@ -1,6 +1,6 @@
 {
   "name": "advers-dbrecord2",
-  "version": "4.5.0",
+  "version": "4.5.1",
   "description": "The MySQL active record base class, async-based",
   "main": "lib/DbRecord2.js",
   "scripts": {
