@@ -155,7 +155,7 @@ class DbRecord2 {
 		}
 
 		if(this._initOptions.queryComment) {
-			sql += ` /* ${this._initOptions.queryComment} */`;
+			sql += ` /*!9999999 ${this._initOptions.queryComment} */`;
 		}
 
 		// Compare our dbh.cid and current transaction dbh
@@ -245,7 +245,7 @@ class DbRecord2 {
 	async _read(locateValue: MysqlDatabase2.FieldValue, byKey: string = undefined) {
 		let field = byKey || this._locateField;
 		const forUpdate = this._initOptions.forUpdate? "FOR UPDATE": "";
-		const comment = this._initOptions.queryComment? ` /* ${this._initOptions.queryComment} */`: "";
+		const comment = this._initOptions.queryComment? ` /*!9999999 ${this._initOptions.queryComment} */`: "";
 
 		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${field}=? LIMIT 1 ${forUpdate}${comment}`,
 			[locateValue]);
@@ -262,7 +262,7 @@ class DbRecord2 {
 	async _readByKey(keys, values) {
 		const fields = keys.join("=? AND ") + "=?";
 		const forUpdate = this._initOptions.forUpdate? "FOR UPDATE": "";
-		const comment = this._initOptions.queryComment? ` /* ${this._initOptions.queryComment} */`: "";
+		const comment = this._initOptions.queryComment? ` /*!9999999 ${this._initOptions.queryComment} */`: "";
 
 		const rows = await this._dbh.queryAsync(`SELECT * FROM ${this._tableName} WHERE ${fields} LIMIT 1 ${forUpdate}${comment}`,
 			values);
@@ -294,7 +294,7 @@ class DbRecord2 {
 	 * @private
 	 */
 	async _initEmpty() {
-		const comment = this._initOptions.queryComment? ` /* ${this._initOptions.queryComment} */`: "";
+		const comment = this._initOptions.queryComment? ` /*!9999999 ${this._initOptions.queryComment} */`: "";
 		//console.log(`t: ${JSON.stringify(this._initOptions)}, ${comment}`);
 		const rows = await this._dbh.queryAsync(`DESCRIBE ${this._tableName}${comment}`);
 		rows.forEach((field) => { this._createAccessMethod(field.Field); });
@@ -340,7 +340,7 @@ class DbRecord2 {
 	 * are being performed, they are up to caller.
 	 */
 	async deleteRecord() {
-		const comment = this._initOptions.queryComment? ` /* ${this._initOptions.queryComment} */`: "";
+		const comment = this._initOptions.queryComment? ` /*!9999999 ${this._initOptions.queryComment} */`: "";
 		await this._dbh.queryAsync(`DELETE FROM ${this._tableName} WHERE ${this._locateField} = ?${comment}`,
 			[ this[this._locateField]() ]);
 	}
@@ -474,7 +474,7 @@ class DbRecord2 {
 		if(options.forUpdate) { sql += " FOR UPDATE"; }
 
 		if(options.queryComment) {
-			sql += ` /* ${options.queryComment} */`;
+			sql += ` /*!9999999 ${options.queryComment} */`;
 		}
 
 		if(options.debugSql) {
