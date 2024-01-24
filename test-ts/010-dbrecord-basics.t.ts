@@ -58,7 +58,7 @@ describe('DbRecord2 basic ops', function() {
 			// @ts-ignore
 			const args = arguments;
 
-			const hasComment = args[0].includes("/* Test comment */")
+			const hasComment = args[0].includes("/*!9999999 Test comment */")
 			if(!hasComment) {
 				console.warn(`query without comment: ${args[0]}`);
 			}
@@ -124,6 +124,33 @@ describe('DbRecord2 basic ops', function() {
 		const TABLE_NAME  = obj._tableName;
 		const row = await dbh.queryAsync(`SELECT * FROM ${TABLE_NAME}`);
 		assert.deepEqual(row, [ {
+			id: 1,
+			name: this.test.fullTitle(),
+			field2: null,
+			field3: null,
+			managed_field: null
+		} ]);
+	});
+
+	//
+	//
+	it('should respect newRecord options', async function() {
+		const obj = await TestRecord.newRecord({
+			name: this.test.fullTitle()
+		}, {
+			noCommit: true,
+		});
+
+		// Checks
+		const TABLE_NAME  = obj._tableName;
+		const row = await dbh.queryAsync(`SELECT * FROM ${TABLE_NAME}`);
+		assert.deepEqual(row, []);
+
+		// Commit and more checks
+		await obj.commit();
+
+		const row2 = await dbh.queryAsync(`SELECT * FROM ${TABLE_NAME}`);
+		assert.deepEqual(row2, [ {
 			id: 1,
 			name: this.test.fullTitle(),
 			field2: null,

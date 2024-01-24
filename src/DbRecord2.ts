@@ -98,7 +98,7 @@ class DbRecord2 {
 	 * @param {Object} [options] - options for database creation
 	 * @returns {DbRecord} the newly created object
 	 */
-	static async newRecord(fields: DbRecord2.ObjectInitializer) {
+	static async newRecord(fields: DbRecord2.ObjectInitializer, options?: DbRecord2.NewRecordOptions): Promise<DbRecord2> {
 		const obj = new this();
 		await obj.init();
 
@@ -107,7 +107,9 @@ class DbRecord2 {
 			obj._raw[k] = fields[k];
 		});
 
-		await obj.commit({ behavior: "INSERT" });
+		if(!options?.noCommit) {
+			await obj.commit({behavior: options?.behavior || "REPLACE"});
+		}
 		return obj;
 	}
 
@@ -554,6 +556,11 @@ namespace DbRecord2 {
 
 
 	export interface CommitOptions {
+		behavior?: "INSERT"|"REPLACE";
+	}
+
+	export interface NewRecordOptions {
+		noCommit?: boolean;
 		behavior?: "INSERT"|"REPLACE";
 	}
 

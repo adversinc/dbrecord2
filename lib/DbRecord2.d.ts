@@ -52,7 +52,7 @@ declare class DbRecord2 {
      * @param {Object} [options] - options for database creation
      * @returns {DbRecord} the newly created object
      */
-    static newRecord(fields: DbRecord2.ObjectInitializer): Promise<DbRecord2>;
+    static newRecord(fields: DbRecord2.ObjectInitializer, options?: DbRecord2.NewRecordOptions): Promise<DbRecord2>;
     /**
      * Save accumulated changed fields, if any
      * @param {Object} options
@@ -197,6 +197,10 @@ declare namespace DbRecord2 {
         [key: string]: DbRecord2.DbField;
     }
     interface CommitOptions {
+        behavior?: "INSERT" | "REPLACE";
+    }
+    interface NewRecordOptions {
+        noCommit?: boolean;
         behavior?: "INSERT" | "REPLACE";
     }
     interface ForEachOptions {
