@@ -51,7 +51,6 @@ describe('DbRecord2 record iteration', function() {
 		const res = [];
 		await TestRecord.forEach({ DEBUG_SQL_QUERY: 1 }, (itm, options) => {
 			res.push({ id: itm.id(), name: itm.name() });
-			console.log("pushed", { id: itm.id(), name: itm.name() });
 		});
 
 		assert.deepEqual(res, [
@@ -212,13 +211,18 @@ describe('DbRecord2 record iteration', function() {
 		let insideIterator = false;
 		let doubleInside = false;
 
+		console.log(`Starting iterator`);
 		await TestRecord.forEach({
 		}, async (itm, options) => {
 			if(insideIterator) { doubleInside = true; }
+
 			insideIterator = true;
+			console.log(`Iterator ${itm.field2()} sleeping`);
 			await sleep(1000);
+			console.log(`Iterator ${itm.field2()} done`);
 			insideIterator = false;
 		});
+		console.log(`Iterator completed`);
 
 		assert.equal(doubleInside, false, "forEach waits for iterator to end");
 	});

@@ -53,7 +53,7 @@ describe('DbRecord2 basic ops', function() {
 		const oldQuery = dbh.queryAsync;
 		let allQueriesHasComment = false;
 		dbh.queryAsync = async function() {
-			const hasComment = arguments[0].includes("/* Test comment */")
+			const hasComment = arguments[0].includes("/*!9999999 Test comment */")
 			if(!hasComment) {
 				console.warn(`query without comment: ${arguments[0]}`);
 			}
