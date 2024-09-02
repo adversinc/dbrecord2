@@ -402,12 +402,15 @@ class DbRecord2 {
 			for(const row of rows) {
 				options.COUNTER++;
 
-				const o = {};
-				o[(this as unknown as typeof DbRecord2)._locatefield()] = row[(this as unknown as typeof DbRecord2)._locatefield()];
-				let obj = null;
+				const itemInit = {};
+				itemInit[(this as unknown as typeof DbRecord2)._locatefield()] = row[(this as unknown as typeof DbRecord2)._locatefield()];
+				let obj: T = null;
 
 				if(!options.noObjectCreate) {
-					obj = new (this as unknown as typeof DbRecord2)(o);
+					obj = new (this as unknown as typeof DbRecord2)(itemInit) as T;
+					if(options?.queryComment) {
+						obj._initOptions.queryComment = options.queryComment;
+					}
 					await obj.init();
 				}
 
