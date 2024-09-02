@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/adversinc2/dbrecord.git"
+    "url": "git+https://github.com/adversinc/dbrecord.git"
   },
   "keywords": [
     "active record",
