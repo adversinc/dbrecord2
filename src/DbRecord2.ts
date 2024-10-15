@@ -1,5 +1,5 @@
 import MysqlDatabase2 from "./MysqlDatabase2";
-const strcount = require('quickly-count-substrings');
+import strcount from "quickly-count-substrings";
 
 // It actually returns Promise<boolean> but DbRecord requires boolean
 type TransactionCallback<T extends DbRecord2> = (me: T) => Promise<boolean>|Promise<void>|boolean|void;

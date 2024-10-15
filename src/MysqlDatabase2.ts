@@ -1,4 +1,4 @@
-import lodashMerge from 'lodash/merge';
+import { merge } from "ts-deepmerge";
 import * as mysql from 'mysql';
 import ContextStorage from 'cls-hooked';
 import fs from "fs";
@@ -81,7 +81,7 @@ class MysqlDatabase2 {
 	 */
 	cid: string;
 
-	private _config: MysqlConfig;
+	private readonly _config: MysqlConfig;
 	private _db: DbConnection = null;
 	private _createdFromPool: boolean = false;
 
@@ -98,7 +98,7 @@ class MysqlDatabase2 {
 	 * @param config
 	 */
 	constructor(config: MysqlConfig) {
-		this._config = lodashMerge({}, config);
+		this._config = merge({}, config);
 
 		if(!connectionPool) {
 			this._db = mysql.createConnection(this._config);
@@ -487,5 +487,5 @@ namespace MysqlDatabase2 {
 	export type TransactionCallback = (dbh: MysqlDatabase2) => Promise<boolean>;
 }
 
-export = MysqlDatabase2;
+export default MysqlDatabase2;
 

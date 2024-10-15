@@ -33,9 +33,9 @@
   "dependencies": {
     "cls-hooked": "^4.2.2",
     "continuation-local-storage": "^3.2.1",
-    "lodash": "^4.17.21",
     "mysql": "^2.18.1",
-    "quickly-count-substrings": "^1.0.0"
+    "quickly-count-substrings": "^1.0.0",
+    "ts-deepmerge": "^7.0.1"
   },
   "devDependencies": {
     "assert": "^2.1.0",
