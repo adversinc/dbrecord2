@@ -398,7 +398,8 @@ class MysqlDatabase2 {
 	 * @param config
 	 */
 	static masterConfig(config: MysqlConfig) {
-		masterConfig = config;
+		masterConfig = merge({}, config);
+		console.log("Set master config", masterConfig);
 	}
 
 	/**
@@ -417,13 +418,13 @@ class MysqlDatabase2 {
 
 			// If no global dbh exist, create it
 			if(!masterDbh) {
-				console.log("Creating masterDbh");
 				const opt = Object.assign({}, masterConfig, options);
+				console.log("Creating masterDbh", opt, new Error().stack);
 				masterDbh = new this(opt);
 
 				masterDbh
 					.connect()
-					.then((r) => { resolve(masterDbh); })
+					.then((r) => { console.log("Resolved"); resolve(masterDbh); })
 					.catch((err) => { reject(err); });
 			} else {
 				//console.log("Not creating masterDbh");

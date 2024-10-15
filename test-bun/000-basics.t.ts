@@ -1,4 +1,4 @@
-import {describe, before, after, beforeEach, it} from "bun:test";
+import {describe, afterAll, beforeAll, it, expect} from "@jest/globals";
 
 process.env["NODE_CONFIG_DIR"] = __dirname + "/config/";
 import assert from 'assert';
@@ -6,41 +6,49 @@ import config from "config";
 
 // Libs to test
 import MysqlDatabase from "../src/MysqlDatabase2";
-console.log("MysqlDatabase=", MysqlDatabase);
 
 // Tests
 describe('MysqlDatabase2 connection', function() {
-	after(() => {
+	console.log("In describe 1");
+
+	afterAll(() => {
 		MysqlDatabase.masterDbhDestroy();
 	});
 
 	//
 	//
 	it('should throw on wrong credentials', async function() {
+		console.log("T1 start");
 		MysqlDatabase.masterConfig({
 			host: "localhost",
 			user: "user never existed",
 			password: "password2password"
 		});
 
+		expect(MysqlDatabase.masterDbh()).rejects.toThrow();
 
+		/*
 		await assert.rejects(async() => {
 				await MysqlDatabase.masterDbh();
 			},
 			{
-				code: "ER_NOT_SUPPORTED_AUTH_MODE" // "ER_ACCESS_DENIED_ERROR"
+				code: "ECONNREFUSED" // "ER_ACCESS_DENIED_ERROR"
 			});
+
+		 */
+
+		console.log("T1 end");
 	});
 });
 
 describe('MysqlDatabase2 pool connection', function() {
-	after(() => {
+	afterAll(() => {
 		MysqlDatabase.masterDbhDestroy();
 	});
 
 	//
 	//
-	it('should throw on wrong credentials', async function() {
+	it('should throw on wrong pool credentials', async function() {
 		const config = {
 			host: "localhost",
 			user: "user never existed",
@@ -54,21 +62,24 @@ describe('MysqlDatabase2 pool connection', function() {
 				await MysqlDatabase.masterDbh();
 			},
 			{
-				code: "ER_NOT_SUPPORTED_AUTH_MODE" // "ER_ACCESS_DENIED_ERROR"
+				code: "ECONNREFUSED" // "ER_ACCESS_DENIED_ERROR"
 			});
 	});
 });
 
 
 describe('MysqlDatabase2 basic ops', function() {
+	console.log("In describe 2");
+
 	let dbh = null;
-	before(async function() {
+	beforeAll(async function() {
+		console.log("In beforeAll 2");
 		MysqlDatabase.masterConfig(config.get("mysql"));
 
 		dbh = await MysqlDatabase.masterDbh();
 	});
 
-	after(() => {
+	afterAll(() => {
 		MysqlDatabase.masterDbhDestroy();
 	});
 

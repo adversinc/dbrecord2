@@ -40,7 +40,7 @@ declare class MysqlDatabase2 {
      * Generated connection id (_db.threadId also can be used);
      */
     cid: string;
-    private _config;
+    private readonly _config;
     private _db;
     private _createdFromPool;
     private _transacted;
@@ -133,4 +133,4 @@ declare namespace MysqlDatabase2 {
     type FieldValue = string | number | Date;
     type TransactionCallback = (dbh: MysqlDatabase2) => Promise<boolean>;
 }
-export = MysqlDatabase2;
+export default MysqlDatabase2;
